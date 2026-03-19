@@ -652,8 +652,13 @@ async function loadVoices(ek,sv){
     const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':ek}});
     if(!r.ok){vg.innerHTML='<div class="lv" style="color:var(--red)">API key inválida</div>';return;}
     const d=await r.json();
+    const TARGET_ID='WEXRePkZGpmcFLvCOaB1';
     const pref=['Antoni','Mateo','Diego','Luca','Daniel','James','Adam','Josh','Brian'];
-    let vs=(d.voices||[]).sort((a,b)=>{const ai=pref.indexOf(a.name),bi=pref.indexOf(b.name);if(a.category==='cloned')return-1;if(b.category==='cloned')return 1;if(ai!==-1&&bi===-1)return-1;if(bi!==-1&&ai===-1)return 1;if(ai!==-1&&bi!==-1)return ai-bi;return 0;}).slice(0,8);
+    let allVoices=d.voices||[];
+    let targetVoice=allVoices.find(v=>v.voice_id===TARGET_ID);
+    let rest=allVoices.filter(v=>v.voice_id!==TARGET_ID).sort((a,b)=>{const ai=pref.indexOf(a.name),bi=pref.indexOf(b.name);if(a.category==='cloned')return-1;if(b.category==='cloned')return 1;if(ai!==-1&&bi===-1)return-1;if(bi!==-1&&ai===-1)return 1;if(ai!==-1&&bi!==-1)return ai-bi;return 0;}).slice(0,7);
+    let vs=targetVoice?[targetVoice,...rest]:rest;
+    if(!sv&&targetVoice)sv=TARGET_ID;
     vg.innerHTML='';
     vs.forEach(v=>{
       const c=document.createElement('div');c.className='vc'+(sv===v.voice_id?' sel':'');
