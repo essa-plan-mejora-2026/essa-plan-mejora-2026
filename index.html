@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESSA 2030 — Plan de Mejora Integral</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090e;--s1:#0d1018;--s2:#121722;--s3:#1a2030;
+  --gold:#c9a84c;--gold2:#e8c97a;--gold-d:rgba(201,168,76,.12);
+  --text:#e8e4d9;--text2:#9aa0b2;--text3:#4a5168;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;--amber:#f59e0b;
+  --card:rgba(255,255,255,.03);--border:rgba(255,255,255,.07);
+  --font-d:'Cormorant Garamond',serif;
+  --font-b:'IBM Plex Sans',sans-serif;
+  --font-m:'IBM Plex Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-b)}
+
+/* ══ SETUP ══════════════════════════════════════════════════════════════════ */
+#setup{
+  position:fixed;inset:0;z-index:999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+}
+#setup::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(201,168,76,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(201,168,76,.025) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+.setup-box{
+  width:360px;max-width:calc(100vw - 32px);
+  background:rgba(10,12,18,.97);
+  border:1px solid rgba(201,168,76,.18);
+  border-radius:4px;
+  padding:28px 24px 24px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),0 24px 60px rgba(0,0,0,.8),inset 0 1px 0 rgba(201,168,76,.08);
+  position:relative;
+}
+.setup-box::before{
+  content:'';position:absolute;top:0;left:24px;right:24px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.5),transparent);
+}
+.setup-box::after{
+  content:'';position:absolute;top:-1px;left:-1px;
+  width:12px;height:12px;
+  border-top:1px solid var(--gold);border-left:1px solid var(--gold);
+  pointer-events:none;
+}
+.s-corner-br{position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;border-bottom:1px solid var(--gold);border-right:1px solid var(--gold);}
+.s-logo{
+  font-family:var(--font-m);font-size:10px;color:rgba(201,168,76,.5);
+  letter-spacing:4px;text-transform:uppercase;
+  margin-bottom:16px;display:flex;align-items:center;gap:10px;
+}
+.s-logo::after{content:'';flex:1;height:1px;background:rgba(201,168,76,.12);}
+.s-title-block{margin-bottom:22px}
+.s-title-main{font-family:var(--font-d);font-size:32px;font-weight:300;color:var(--gold2);line-height:1;margin-bottom:4px;}
+.s-title-sub{font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
+.sl{
+  font-family:var(--font-m);font-size:9px;color:rgba(201,168,76,.55);
+  text-transform:uppercase;letter-spacing:2px;
+  margin-bottom:6px;display:flex;align-items:center;gap:6px;
+}
+.sl::before{content:'›';color:var(--gold);}
+.si{
+  width:100%;
+  background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(201,168,76,.15);
+  border-radius:2px;
+  padding:9px 12px;
+  font-family:var(--font-m);font-size:12px;color:var(--text);
+  outline:none;margin-bottom:4px;
+  transition:border-color .2s,background .2s;
+}
+.si:focus{border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.03);}
+.si::placeholder{color:rgba(255,255,255,.12);font-size:11px}
+.sh{font-family:var(--font-m);font-size:10px;color:var(--text3);margin-bottom:14px;line-height:1.6;padding-left:4px;}
+.sh a{color:rgba(201,168,76,.6);text-decoration:none}.sh a:hover{color:var(--gold)}
+.sdiv{height:1px;background:rgba(255,255,255,.05);margin:4px 0 14px;position:relative}
+.sdiv::after{content:'';position:absolute;left:0;top:0;width:30%;height:1px;background:linear-gradient(90deg,rgba(201,168,76,.2),transparent)}
+.vg{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;margin-bottom:4px}
+.vc{padding:8px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.015);cursor:pointer;transition:all .15s;}
+.vc:hover{border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.04)}
+.vc.sel{border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.06)}
+.vc .vn{font-family:var(--font-m);font-size:11px;font-weight:500;color:var(--text)}
+.vc .vd{font-size:9px;color:var(--text3);margin-top:2px;font-family:var(--font-m)}
+.lv{font-family:var(--font-m);font-size:10px;color:var(--text3);text-align:center;padding:12px 8px;grid-column:1/-1;letter-spacing:1px}
+.sbtn{
+  width:100%;padding:11px;margin-top:16px;
+  background:transparent;
+  border:1px solid rgba(201,168,76,.35);
+  border-radius:2px;
+  font-family:var(--font-m);font-size:11px;font-weight:500;
+  color:var(--gold2);cursor:pointer;
+  letter-spacing:2px;text-transform:uppercase;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.sbtn::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(201,168,76,.07),transparent);transform:translateX(-100%);transition:transform .4s;}
+.sbtn:hover{background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.6)}
+.sbtn:hover::before{transform:translateX(100%)}
+.sbtn:active{transform:scale(.99)}
+.sbtn:disabled{opacity:.25;cursor:not-allowed}
+.serr{font-family:var(--font-m);font-size:10px;color:var(--red);text-align:center;margin-top:8px;display:none;letter-spacing:.5px;}
+
+/* ══ APP — FULL SCREEN SLIDES ════════════════════════════════════════════════ */
+#app{position:fixed;inset:0;display:none}
+
+/* TOP BAR — thin, transparent */
+#top-bar{
+  position:fixed;top:0;left:0;right:0;height:48px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;z-index:80;
+  background:linear-gradient(180deg,rgba(8,9,14,.9) 0%,transparent 100%);
+  pointer-events:none;
+}
+.tb-logo{font-family:var(--font-d);font-size:18px;color:var(--gold);letter-spacing:1px;pointer-events:all}
+.tb-actions{display:flex;gap:8px;pointer-events:all}
+.tb-btn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(8,9,14,.8);color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;font-family:var(--font-b);display:flex;align-items:center;gap:5px;backdrop-filter:blur(8px)}
+.tb-btn:hover{background:var(--s3);color:var(--text)}.tb-btn.on{border-color:rgba(201,168,76,.4);color:var(--gold)}
+
+/* ══ SLIDES — FULL SCREEN ════════════════════════════════════════════════════ */
+.slides{position:fixed;inset:0}
+.slide{
+  position:absolute;inset:0;
+  display:flex;align-items:stretch;
+  padding:56px 72px 72px;
+  opacity:0;transform:translateX(50px);
+  transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.exit{opacity:0;transform:translateX(-50px)}
+
+.s-inner{width:100%;display:flex;flex-direction:column;justify-content:center}
+.s-inner.tight{padding:0}
+.s-lbl{font-size:10px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;font-family:var(--font-m)}
+.s-title{font-family:var(--font-d);font-size:54px;font-weight:300;color:var(--text);line-height:1.05;margin-bottom:8px}
+.gold-line{width:48px;height:2px;background:var(--gold);margin-bottom:28px;position:relative;overflow:hidden}
+.gold-line::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--gold2),transparent);animation:shim 2.5s infinite}
+@keyframes shim{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+
+/* Grids */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;width:100%}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%}
+.c6040{display:grid;grid-template-columns:1.5fr 1fr;gap:36px;width:100%;align-items:start}
+.c5050{display:grid;grid-template-columns:1fr 1fr;gap:28px;width:100%;align-items:start}
+
+/* Stat card */
+.scard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .3s}
+.scard:hover::before{opacity:1}
+.snum{font-family:var(--font-d);font-size:46px;font-weight:300;color:var(--gold2);line-height:1;margin-bottom:6px}
+.snum.sm{font-size:32px}.slbl{font-size:12px;color:var(--text2);font-weight:300;line-height:1.5}
+.sacc{font-size:10px;color:var(--gold);margin-top:5px;letter-spacing:1px;text-transform:uppercase;font-family:var(--font-m)}
+
+/* KPI */
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px 20px}
+.kval{font-family:var(--font-d);font-size:34px;font-weight:300;color:var(--gold2);line-height:1}
+.klbl{font-size:11px;color:var(--text2);margin-top:5px}
+.kpi.hl{border-color:rgba(201,168,76,.3);background:var(--gold-d)}
+
+/* FODA */
+.foda{display:grid;grid-template-columns:1fr 1fr;gap:2px;width:100%;height:340px}
+.fc{padding:20px;display:flex;flex-direction:column;gap:6px}
+.fc.F{background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.12)}
+.fc.O{background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.12)}
+.fc.D{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.12)}
+.fc.A{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.12)}
+.fh{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-family:var(--font-m);margin-bottom:3px}
+.fc.F .fh{color:var(--green)}.fc.O .fh{color:var(--blue)}.fc.D .fh{color:var(--red)}.fc.A .fh{color:var(--amber)}
+.fi{font-size:12px;color:var(--text2);padding-left:10px;position:relative;line-height:1.5}
+.fi::before{content:'·';position:absolute;left:0;color:var(--text3)}
+
+/* Chart */
+.cw{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative}
+.cw canvas{max-height:200px}.ct{font-size:10px;color:var(--text2);margin-bottom:14px;letter-spacing:1px;text-transform:uppercase;font-family:var(--font-m)}
+
+/* Table */
+.pt{width:100%;border-collapse:collapse}
+.pt th{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:7px 0;border-bottom:1px solid var(--border);text-align:left;font-family:var(--font-m)}
+.pt td{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;color:var(--text2)}
+.pt td:last-child{text-align:right;color:var(--gold);font-family:var(--font-m);font-size:11px}
+.pt tr.nw td{color:var(--gold2)}
+
+/* Timeline */
+.tl{display:flex;flex-direction:column;gap:0;width:100%}
+.ti{display:flex;gap:18px;position:relative;padding-bottom:18px}
+.ti:last-child{padding-bottom:0}
+.tl-l{display:flex;flex-direction:column;align-items:center;width:70px;flex-shrink:0}
+.ty{font-family:var(--font-m);font-size:12px;color:var(--gold);font-weight:500}
+.td{width:8px;height:8px;border-radius:50%;background:var(--gold);margin:6px 0;flex-shrink:0}
+.tline{width:1px;flex:1;background:rgba(201,168,76,.18)}
+.ti:last-child .tline{display:none}
+.tc{padding-top:1px;flex:1}
+.th{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.tb2{font-size:11px;color:var(--text2);line-height:1.6}
+
+/* Conclusions */
+.cl{display:flex;flex-direction:column;gap:10px;width:100%}
+.ci{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px 18px}
+.cn{font-family:var(--font-d);font-size:28px;font-weight:300;color:var(--gold);line-height:1;flex-shrink:0;width:36px}
+.ch{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.cb{font-size:11px;color:var(--text2);line-height:1.6}
+
+/* Cover */
+.cov{width:100%;height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;position:relative;overflow:hidden}
+.cov-bg{position:absolute;right:-40px;top:50%;transform:translateY(-50%);font-family:var(--font-d);font-size:280px;font-weight:300;color:rgba(201,168,76,.03);line-height:1;user-select:none;pointer-events:none;white-space:nowrap}
+.cov-ey{font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;margin-bottom:18px}
+.cov-t{font-family:var(--font-d);font-size:100px;font-weight:300;color:var(--gold2);line-height:.9;margin-bottom:14px}
+.cov-s{font-family:var(--font-d);font-size:26px;font-weight:300;color:var(--text);margin-bottom:6px;font-style:italic}
+.cov-tag{font-size:12px;color:var(--text2);letter-spacing:2px;margin-bottom:40px}
+.cov-m{display:flex;gap:28px}
+.cov-mi{font-size:11px;color:var(--text3);font-family:var(--font-m)}
+.cov-mi span{display:block;color:var(--text2);font-size:12px;margin-top:2px}
+
+/* Crisis */
+.cr-big{font-family:var(--font-d);font-size:130px;font-weight:300;color:var(--red);line-height:.85}
+.cr-u{font-size:22px;color:var(--text2);font-weight:300;margin-top:6px;font-family:var(--font-d)}
+.cr-ctx{font-size:14px;color:var(--text2);margin-top:16px;max-width:360px;line-height:1.7;font-weight:300}
+.cr-b{display:inline-flex;align-items:center;gap:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 12px;font-size:10px;color:var(--red);font-family:var(--font-m);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+
+/* ══ BOTTOM NAV ══════════════════════════════════════════════════════════════ */
+#nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:80;background:rgba(8,9,14,.75);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:40px;padding:8px 16px}
+.nb{width:34px;height:34px;border-radius:50%;background:transparent;border:none;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:14px}
+.nb:hover{color:var(--text)}.nb:disabled{opacity:.25;cursor:not-allowed}
+.ndots{display:flex;gap:5px;align-items:center}
+.ndot{width:5px;height:5px;border-radius:50%;background:var(--text3);transition:all .3s;cursor:pointer}
+.ndot.on{background:var(--gold);width:18px;border-radius:3px}
+#nctr{font-family:var(--font-m);font-size:11px;color:var(--text3);min-width:44px;text-align:center}
+
+/* ══ CARLOS FLOATING WIDGET ══════════════════════════════════════════════════
+   Small pill in bottom-right corner.
+   Expands to a compact card when in call.
+   NEVER covers more than 280px × 380px of the screen.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#carlos{
+  position:fixed;bottom:24px;right:24px;z-index:300;
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+}
+
+/* Bubble: chat transcript, shown only when call is active */
+#c-bubble{
+  width:260px;
+  background:rgba(13,16,24,.92);
+  border:1px solid var(--border);
+  border-radius:16px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 20px 50px rgba(0,0,0,.5);
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transition:max-height .4s cubic-bezier(.4,0,.2,1), opacity .3s;
+  pointer-events:none;
+}
+#c-bubble.open{max-height:320px;opacity:1;pointer-events:all}
+.c-tx{
+  height:160px;overflow-y:auto;padding:14px 14px 10px;
+  display:flex;flex-direction:column;gap:8px;
+  scrollbar-width:none;
+}
+.c-tx::-webkit-scrollbar{display:none}
+.c-bbl{font-size:12px;line-height:1.6;padding:8px 12px;border-radius:10px;max-width:95%;animation:cfi .2s ease}
+@keyframes cfi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.c-bbl.ai{background:rgba(26,32,48,.9);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:3px;font-weight:300;color:var(--text2)}
+.c-bbl.me{background:var(--gold-d);color:var(--gold2);align-self:flex-end;border-bottom-right-radius:3px;font-style:italic}
+.c-bbl.mid{background:transparent;border:1px dashed rgba(34,197,94,.25);color:var(--green);font-size:11px;font-style:italic}
+.c-ph{color:var(--text3);font-size:12px;font-style:italic;text-align:center;padding:20px 10px}
+.c-wf{display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 14px;height:28px}
+.cwb{width:2px;border-radius:1px;background:rgba(201,168,76,.15);height:3px}
+.c-wf.on .cwb{background:var(--gold);animation:cwb var(--d,.8s) ease-in-out infinite alternate;animation-delay:var(--dl,0s)}
+@keyframes cwb{from{height:3px}to{height:var(--h,20px)}}
+.c-type{display:flex;gap:6px;padding:0 12px 12px}
+.c-inp{flex:1;background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:var(--font-b);font-size:12px;color:var(--text);outline:none}
+.c-inp:focus{border-color:rgba(201,168,76,.3)}.c-inp::placeholder{color:var(--text3)}
+.c-send{width:34px;height:34px;border-radius:8px;flex-shrink:0;background:var(--gold-d);border:1px solid rgba(201,168,76,.2);color:var(--gold);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.c-send:hover{background:rgba(201,168,76,.22)}
+/* Narrate button inside bubble */
+.c-narrate{
+  margin:0 12px 10px;padding:8px;border-radius:8px;
+  background:var(--gold-d);border:1px solid rgba(201,168,76,.2);
+  color:var(--gold);font-size:11px;cursor:pointer;font-family:var(--font-b);
+  transition:background .2s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.c-narrate:hover{background:rgba(201,168,76,.22)}
+
+/* Main pill / call button */
+#c-pill{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(13,16,24,.92);
+  border:1px solid var(--border);
+  border-radius:40px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 30px rgba(0,0,0,.4);
+  padding:8px 16px 8px 8px;
+  cursor:default;
+  transition:border-color .3s;
+}
+#c-pill.active{border-color:rgba(201,168,76,.3)}
+#c-av{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(145deg,#2a3148,#1e2534);
+  border:1.5px solid rgba(201,168,76,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-d);font-size:18px;color:var(--gold2);
+  position:relative;
+}
+#c-av.sp::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--gold);animation:ring 1.5s ease-in-out infinite}
+@keyframes ring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.08);opacity:.2}}
+.c-info{display:flex;flex-direction:column}
+.c-name{font-size:13px;font-weight:500;color:var(--text);line-height:1}
+.c-stat{font-size:10px;color:var(--text2);margin-top:2px}
+.c-call-btn{
+  padding:6px 14px;border-radius:20px;border:none;
+  font-family:var(--font-b);font-size:11px;font-weight:500;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.c-call-btn.start{background:linear-gradient(135deg,#5bc77a,#4caf7d);color:#fff}
+.c-call-btn.end{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);color:var(--red)}
+.c-stop{
+  width:28px;height:28px;border-radius:50%;border:1px solid rgba(239,68,68,.25);
+  background:rgba(239,68,68,.08);color:var(--red);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;font-size:10px;
+}
+.c-stop:hover{background:rgba(239,68,68,.18)}.c-stop.hi{display:none}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP ════════════════════════════════════════════════════════════════ -->
+<div id="setup">
+  <div class="setup-box">
+    <div class="s-corner-br"></div>
+    <div class="s-logo">ESSA · SYS</div>
+    <div class="s-title-block">
+      <div class="s-title-main">ESSA</div>
+      <div class="s-title-sub">Plan de Mejora Integral · 2026–2031</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <span class="sl">Anthropic API Key</span>
+      <input class="si" type="password" id="ak" placeholder="sk-ant-...">
+      <div class="sh"><a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</div>
+    </div>
+    <div class="sdiv"></div>
+    <div style="margin-bottom:14px">
+      <span class="sl">ElevenLabs API Key</span>
+      <input class="si" type="password" id="ek" placeholder="sk_...">
+      <div class="sh"><a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a> → Profile → API Key</div>
+    </div>
+    <div style="margin-bottom:6px">
+      <span class="sl">Voz de Carlos</span>
+      <div class="vg" id="vg"><div class="lv">Ingresa ElevenLabs key para cargar voces…</div></div>
+    </div>
+    <button class="sbtn" id="go-btn" onclick="launch()" disabled>Iniciar presentación</button>
+    <div class="serr" id="serr"></div>
+  </div>
+</div>
+
+<!-- ══ APP ══════════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div class="tb-logo">ESSA</div>
+    <div class="tb-actions">
+      <button class="tb-btn" id="anBtn" onclick="toggleAN()">▶ Auto-narrar</button>
+      <button class="tb-btn" onclick="goSetup()">⚙</button>
+    </div>
+  </div>
+
+  <!-- SLIDES — FULL SCREEN, NOTHING COVERS THEM -->
+  <div class="slides" id="slides">
+
+    <!-- 0: COVER -->
+    <div class="slide" id="s0"
+      data-lbl="Portada"
+      data-n="Bienvenidos a la presentación del Plan de Mejora Integral de Essa, la salinera más grande del mundo por extensión operativa. Estamos en marzo de 2026, y este plan propone una transformación estructural con horizonte al año dos mil treinta y uno, partiendo del diagnóstico actualizado y de los datos verificados del artículo académico presentado hoy.">
+      <div class="cov">
+        <div class="cov-bg">ESSA</div>
+        <div class="cov-ey">Exportadora de Sal · Guerrero Negro · Baja California Sur · México</div>
+        <div class="cov-t">ESSA</div>
+        <div class="cov-s">Plan de Mejora Integral</div>
+        <div class="cov-tag">Soberanía Salinera · Diversificación · Liderazgo Global</div>
+        <div class="gold-line"></div>
+        <div class="cov-m">
+          <div class="cov-mi">Período<span>2026 — 2031</span></div>
+          <div class="cov-mi">Inversión<span>107 a 148 millones de dólares</span></div>
+          <div class="cov-mi">Tasa de retorno<span>18 — 24 por ciento</span></div>
+          <div class="cov-mi">Elaborado<span>Marzo 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1: CRISIS -->
+    <div class="slide" id="s1"
+      data-lbl="El Contexto 2024–2025"
+      data-n="En febrero de 2024, el gobierno mexicano adquirió el 49 por ciento restante de Mitsubishi por mil quinientos millones de pesos, completando la nacionalización. Al retirarse Mitsubishi, se llevó toda la cartera de clientes construida en cincuenta años. La empresa acumuló más de seis millones de toneladas sin comprador. En octubre de 2024, Moisés Poblanno Silva asumió la dirección y para enero de 2025 logró comprometer contratos por nueve millones de toneladas. Hoy, en marzo de 2026, la emergencia fue superada — pero los problemas estructurales persisten.">
+      <div class="s-inner">
+        <div class="s-lbl">01 · Contexto 2024–2025</div>
+        <div class="c6040" style="align-items:center">
+          <div>
+            <div class="cr-b">📅 Crisis resuelta · Retos estructurales pendientes · Marzo 2026</div>
+            <div class="cr-big">9M</div>
+            <div class="cr-u">Toneladas comprometidas 2024–2025</div>
+            <div class="cr-ctx">Tras acumular más de 6 millones de toneladas sin comprador en 2024, el director Moisés Poblanno Silva estabilizó las ventas en 2025. En marzo 2026, la emergencia fue superada pero los retos estructurales persisten: infraestructura envejecida, conflicto sindical activo y precio de commodity.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="scard"><div class="snum sm">1,300</div><div class="slbl">Empleados directos. Más de 3,300 familias dependen de Essa en Guerrero Negro e Isla de Cedros.</div></div>
+            <div class="scard"><div class="snum sm" style="color:var(--green)">Oct 2024</div><div class="slbl">Nombramiento de Poblanno Silva. Comercialización reactivada en 2025 con 9 M ton comprometidas.</div></div>
+            <div class="scard"><div class="snum sm" style="color:var(--red)">$12,900M</div><div class="slbl">MXN en pasivos contingentes — 7.6 veces lo pagado por la nacionalización (Ejecentral, 2024).</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2: EMPRESA -->
+    <div class="slide" id="s2"
+      data-lbl="La Empresa"
+      data-n="Essa es la salinera más grande del mundo por extensión operativa. Con ochenta mil cuatrocientas cincuenta y tres hectáreas concesionadas sobre la Laguna Ojo de Liebre — Reserva de la Biosfera El Vizcaíno y Patrimonio de la Humanidad de la Organización de Naciones Unidas — produce entre siete y ocho millones de toneladas al año mediante evaporación solar natural, con insumos prácticamente gratuitos: sol, viento y agua marina. Fue fundada en mil novecientos cincuenta y cuatro y desde febrero de 2024 es cien por ciento propiedad del gobierno mexicano. Su sal supera el noventa y nueve punto siete por ciento de pureza de cloruro de sodio.">
+      <div class="s-inner">
+        <div class="s-lbl">02 · La Empresa</div>
+        <div class="s-title">La Salinera más Grande del Mundo</div>
+        <div class="gold-line"></div>
+        <div class="g4" style="margin-bottom:18px">
+          <div class="scard"><div class="snum">1954</div><div class="slbl">Año de fundación · 70 años de operación</div><div class="sacc">Guerrero Negro, BCS · Municipio Mulegé</div></div>
+          <div class="scard"><div class="snum">80,453</div><div class="slbl">Hectáreas concesionadas sobre Laguna Ojo de Liebre</div><div class="sacc">Sitio Ramsar · Patrimonio UNESCO</div></div>
+          <div class="scard"><div class="snum">7–8M</div><div class="slbl">Toneladas de sal producidas por año (real 2025)</div><div class="sacc">Evaporación solar · Insumos gratuitos</div></div>
+          <div class="scard"><div class="snum" style="font-size:34px">#6</div><div class="slbl">Posición de México en producción mundial de sal</div><div class="sacc">Cuenca del Pacífico Norte</div></div>
+        </div>
+        <div style="padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:11px">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:var(--font-m);letter-spacing:1px;text-transform:uppercase">Mercados activos a marzo 2026</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--text2)">🇯🇵 Japón</span><span style="font-size:13px;color:var(--text2)">🇨🇳 China</span><span style="font-size:13px;color:var(--text2)">🇺🇸 EE.UU.</span><span style="font-size:13px;color:var(--text2)">🇹🇼 Taiwán</span><span style="font-size:13px;color:var(--text2)">🇰🇷 Corea</span><span style="font-size:13px;color:var(--text2)">🇨🇷 Costa Rica</span><span style="font-size:13px;color:var(--gold)">🇶🇦 Qatar (en negociación)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3: FODA -->
+    <div class="slide" id="s3"
+      data-lbl="Análisis FODA"
+      data-n="El análisis estratégico revela ventajas competitivas excepcionales pero con una vulnerabilidad comercial crítica. La fortaleza más poderosa es la combinación de escala, posición geográfica y recursos naturales gratuitos. La oportunidad más inmediata es la tensión entre Estados Unidos y China que lleva a compradores asiáticos a buscar proveedores alternativos. La debilidad central es que nunca existió un área comercial propia.">
+      <div class="s-inner tight">
+        <div class="s-lbl" style="margin-bottom:10px">03 · Análisis Estratégico</div>
+        <div class="s-title" style="font-size:38px;margin-bottom:16px">Fortalezas · Oportunidades · Debilidades · Amenazas</div>
+        <div class="foda">
+          <div class="fc F"><div class="fh">Fortalezas</div><div class="fi">Salinera más grande del mundo</div><div class="fi">Recursos naturales gratuitos: sol, viento y mar</div><div class="fi">Puerto propio en Isla de Cedros</div><div class="fi">Control soberano del cien por ciento</div><div class="fi">70 años de historial de calidad</div></div>
+          <div class="fc O"><div class="fh">Oportunidades</div><div class="fi">Tensión EE.UU.–China redirige compradores asiáticos</div><div class="fi">Nearshoring aumenta industria química en México</div><div class="fi">Tratado México Estados Unidos Canadá sin aranceles</div><div class="fi">India y Sudeste Asiático: mercados sin explotar</div><div class="fi">Salmuera con magnesio y bromuro de valor industrial</div></div>
+          <div class="fc D"><div class="fh">Debilidades</div><div class="fi">Pérdida del único canal comercial (Mitsubishi)</div><div class="fi">Más de seis millones de toneladas sin vender</div><div class="fi">Sin área comercial internacional propia</div><div class="fi">Flota de transporte obsoleta</div><div class="fi">Precio bajo por vender solo sal a granel</div></div>
+          <div class="fc A"><div class="fh">Amenazas</div><div class="fi">China produce 60 millones de toneladas a precios de dumping</div><div class="fi">Volatilidad de fletes marítimos internacionales</div><div class="fi">Presiones ambientales en Laguna patrimonio UNESCO</div><div class="fi">Inestabilidad presupuestal gubernamental</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4: PRODUCTOS -->
+    <div class="slide" id="s4"
+      data-lbl="Productos & Mercados"
+      data-n="Aquí está la palanca financiera más poderosa del plan. Hoy Essa vende casi todo a 30 dólares la tonelada. Pero la sal farmacéutica vale 200, la gourmet hasta 400, y el cloruro de magnesio de la salmuera unos 100 dólares. Sin aumentar el volumen de producción, solo cambiando el mix de productos, los ingresos pueden crecer de forma dramática.">
+      <div class="s-inner">
+        <div class="s-lbl">04 · Productos & Mercados</div>
+        <div class="c5050">
+          <div>
+            <div class="s-title" style="font-size:34px;margin-bottom:18px">De granel<br>a valor agregado</div>
+            <table class="pt">
+              <thead><tr><th>Producto</th><th>Volumen</th><th>USD/ton</th></tr></thead>
+              <tbody>
+                <tr><td>Sal industrial a granel</td><td style="color:var(--text3)">+5 M ton</td><td>$30</td></tr>
+                <tr><td>Sal para deshielo</td><td style="color:var(--text3)">1 M ton</td><td>$65</td></tr>
+                <tr><td>Sal fina</td><td style="color:var(--text3)">550 K ton</td><td>$48</td></tr>
+                <tr><td>Sal baja en bromo</td><td style="color:var(--text3)">550 K ton</td><td>$52</td></tr>
+                <tr class="nw"><td>★ Sal farmacéutica</td><td style="color:var(--gold)">Nuevo</td><td>$200</td></tr>
+                <tr class="nw"><td>★ Cloruro de magnesio</td><td style="color:var(--gold)">Subproducto</td><td>$100</td></tr>
+                <tr class="nw"><td>★ Sal gourmet premium</td><td style="color:var(--gold)">Nuevo</td><td>$400</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="cw"><div class="ct">Precio por tonelada — dólares</div><canvas id="ch-prod"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5: FINANCIERO -->
+    <div class="slide" id="s5"
+      data-lbl="Dashboard Financiero"
+      data-n="Las proyecciones muestran una empresa que en dos mil veinticinco factura ciento veintiséis millones de dólares con margen del nueve por ciento. Con el plan, llega a trescientos cincuenta y siete millones en dos mil treinta con margen del treinta por ciento. El año dos mil veintiséis tiene flujo negativo por la concentración de inversiones urgentes. Desde dos mil veintisiete la empresa genera flujo positivo creciente con tasa interna de retorno del dieciocho al veintidós por ciento en diez años.">
+      <div class="s-inner tight">
+        <div class="s-lbl" style="margin-bottom:12px">05 · Dashboard Financiero</div>
+        <div class="g4" style="margin-bottom:16px">
+          <div class="kpi hl"><div class="kval">$357M</div><div class="klbl">Ingresos proyectados 2030</div></div>
+          <div class="kpi"><div class="kval">30%</div><div class="klbl">Margen operativo proyectado 2030</div></div>
+          <div class="kpi"><div class="kval">18–22%</div><div class="klbl">Tasa interna de retorno en 10 años</div></div>
+          <div class="kpi"><div class="kval">2027</div><div class="klbl">Año de punto de equilibrio positivo</div></div>
+        </div>
+        <div class="g2">
+          <div class="cw"><div class="ct">Ingresos totales 2025–2030 (millones de dólares)</div><canvas id="ch-ing"></canvas></div>
+          <div class="cw"><div class="ct">Margen operativo por año (porcentaje)</div><canvas id="ch-ebt"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6: INVERSIÓN -->
+    <div class="slide" id="s6"
+      data-lbl="Plan de Inversión"
+      data-n="El plan requiere entre noventa y cuatro y ciento veintisiete millones de dólares entre dos mil veintiséis y dos mil treinta. Las dos inversiones más urgentes son la barcaza nueva, con un costo de entre veintisiete y treinta millones, y la creación de la división comercial internacional. Sin estas dos acciones la empresa no puede salir de la crisis. La planta solar de cincuenta megavatios es la de mayor monto pero también la de mayor impacto a largo plazo.">
+      <div class="s-inner">
+        <div class="s-lbl">06 · Plan de Inversión</div>
+        <div class="c5050" style="align-items:center">
+          <div>
+            <div class="s-title" style="font-size:36px;margin-bottom:6px">Inversión Total</div>
+            <div style="font-family:var(--font-d);font-size:58px;color:var(--gold2);font-weight:300;margin-bottom:6px">$94–127M</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:22px">Millones de dólares · 2026–2030</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;padding:9px 13px;background:var(--card);border:1px solid rgba(239,68,68,.2);border-radius:8px"><span style="font-size:12px;color:var(--text2)">⚡ Urgente: Barcaza + camiones</span><span style="font-family:var(--font-m);font-size:11px;color:var(--red)">$35–42M</span></div>
+              <div style="display:flex;justify-content:space-between;padding:9px 13px;background:var(--card);border:1px solid rgba(201,168,76,.2);border-radius:8px"><span style="font-size:12px;color:var(--text2)">⭐ División Comercial Internacional</span><span style="font-family:var(--font-m);font-size:11px;color:var(--gold)">$3–5M</span></div>
+              <div style="display:flex;justify-content:space-between;padding:9px 13px;background:var(--card);border:1px solid var(--border);border-radius:8px"><span style="font-size:12px;color:var(--text2)">Planta tratamiento salmuera</span><span style="font-family:var(--font-m);font-size:11px;color:var(--text2)">$15–20M</span></div>
+              <div style="display:flex;justify-content:space-between;padding:9px 13px;background:var(--card);border:1px solid var(--border);border-radius:8px"><span style="font-size:12px;color:var(--text2)">Energía solar fotovoltaica 50 megavatios</span><span style="font-family:var(--font-m);font-size:11px;color:var(--text2)">$35–50M</span></div>
+            </div>
+          </div>
+          <div class="cw"><div class="ct">Distribución de inversión</div><canvas id="ch-inv"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7: ROADMAP -->
+    <div class="slide" id="s7"
+      data-lbl="Roadmap 2026–2030"
+      data-n="El roadmap tiene una secuencia clara. En dos mil veintiséis se resuelve la crisis: barcaza nueva, primeros comerciales internacionales y contratos directos en Asia. En dos mil veintisiete arranca la planta de subproductos y se consolidan nuevos mercados. En dos mil veintiocho se certifica la línea farmacéutica. Y en dos mil treinta la empresa llega al treinta por ciento de margen con presencia en más de quince mercados.">
+      <div class="s-inner">
+        <div class="s-lbl">07 · Hoja de Ruta</div>
+        <div class="c5050">
+          <div>
+            <div class="s-title" style="font-size:38px;margin-bottom:22px">Roadmap<br>2026 — 2030</div>
+            <div class="tl">
+              <div class="ti"><div class="tl-l"><div class="ty">2026</div><div class="td" style="background:var(--red)"></div><div class="tline"></div></div><div class="tc"><div class="th">Crisis → Estabilización</div><div class="tb2">Barcaza nueva · 50 comerciales contratados · Primeros contratos directos en Japón, Corea y EE.UU.</div></div></div>
+              <div class="ti"><div class="tl-l"><div class="ty">2027</div><div class="td" style="background:var(--amber)"></div><div class="tline"></div></div><div class="tc"><div class="th">Diversificación & Subproductos</div><div class="tb2">Planta de cristalización en operación · Punto de equilibrio positivo · 10 mercados activos</div></div></div>
+              <div class="ti"><div class="tl-l"><div class="ty">2028</div><div class="td" style="background:var(--blue)"></div><div class="tline"></div></div><div class="tc"><div class="th">Valor Agregado & Certificaciones</div><div class="tb2">Línea farmacéutica certificada · División comercial completa · Energía solar parcial</div></div></div>
+              <div class="ti"><div class="tl-l"><div class="ty">2030</div><div class="td" style="background:var(--green)"></div></div><div class="tc"><div class="th">Liderazgo & Rentabilidad</div><div class="tb2">Margen del treinta por ciento · Más de 15 mercados directos · 357 millones de dólares en ingresos</div></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="cw"><div class="ct">Volumen de ventas proyectado (millones de toneladas)</div><canvas id="ch-vol"></canvas></div>
+            <div style="margin-top:14px;padding:16px;background:var(--card);border:1px solid rgba(34,197,94,.15);border-radius:11px">
+              <div style="font-size:10px;color:var(--green);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;font-family:var(--font-m)">Objetivo 2030</div>
+              <div style="font-family:var(--font-d);font-size:30px;color:var(--gold2);font-weight:300">Soberanía Comercial</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.6">Venta directa sin intermediarios · División internacional propia</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8: CONCLUSIONES -->
+    <div class="slide" id="s8"
+      data-lbl="Conclusiones"
+      data-n="Las conclusiones del plan son claras a marzo de 2026. La crisis aguda de 2024 fue superada por la gestión de Poblanno Silva, pero la transformación estructural apenas comienza. La ventaja competitiva de Essa es real e inimitable: nadie puede replicar a corto plazo la concesión sobre la Laguna Ojo de Liebre ni la infraestructura de Isla de Cedros. El valor agregado es la mayor palanca financiera: pasar de 25 dólares a 200 dólares por tonelada en sal farmacéutica no requiere más producción, solo certificaciones y capacidad comercial. Y ninguna transformación estratégica es sostenible sin gobernanza sólida y resolución del conflicto sindical.">
+      <div class="s-inner">
+        <div class="s-lbl">08 · Conclusiones</div>
+        <div class="c5050">
+          <div>
+            <div class="s-title" style="font-size:40px;margin-bottom:20px">Cinco<br>Conclusiones</div>
+            <div class="cl">
+              <div class="ci"><div class="cn">1</div><div><div class="ch">Crisis resuelta; transformación estructural pendiente</div><div class="cb">Poblanno Silva estabilizó ventas en 2025. El reto es institucionalizar esa capacidad comercial de forma permanente.</div></div></div>
+              <div class="ci"><div class="cn">2</div><div><div class="ch">Ventaja competitiva real, duradera y subutilizada</div><div class="cb">Escala, posición geográfica y recursos gratuitos no pueden replicarse. El plan la explota por primera vez en 70 años.</div></div></div>
+              <div class="ci"><div class="cn">3</div><div><div class="ch">El valor agregado es la mayor palanca financiera</div><div class="cb">De 25 dólares actuales a 200 dólares en sal farmacéutica USP — sin aumentar volumen de producción.</div></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="cl" style="margin-top:60px">
+              <div class="ci"><div class="cn">4</div><div><div class="ch">La salmuera es un activo, no solo un pasivo</div><div class="cb">Cloruro de magnesio y bromuro de sodio generan ingresos y eliminan el riesgo ambiental sobre la Laguna UNESCO.</div></div></div>
+              <div class="ci"><div class="cn">5</div><div><div class="ch">Gobernanza y sindicato son condición de viabilidad</div><div class="cb">El paro histórico de 2025 demostró que sin acuerdo laboral y gobernanza sólida, ningún otro eje del plan funciona.</div></div></div>
+            </div>
+            <div style="margin-top:16px;padding:18px;background:var(--gold-d);border:1px solid rgba(201,168,76,.25);border-radius:11px;text-align:center">
+              <div style="font-family:var(--font-d);font-size:20px;color:var(--gold2);margin-bottom:3px">ESSA 2031</div>
+              <div style="font-size:11px;color:var(--text2);letter-spacing:2px">El proveedor más competitivo de la cuenca del Pacífico</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /slides -->
+
+  <!-- BOTTOM NAV -->
+  <div id="nav">
+    <button class="nb" id="pb" onclick="go(-1)" disabled>←</button>
+    <div class="ndots" id="ndots"></div>
+    <span id="nctr">1 / 9</span>
+    <button class="nb" id="nb2" onclick="go(1)">→</button>
+  </div>
+
+  <!-- ══ CARLOS FLOATING WIDGET ════════════════════════════════════════════ -->
+  <div id="carlos">
+    <!-- Transcript bubble (only shows when in call) -->
+    <div id="c-bubble">
+      <div class="c-tx" id="c-tx"><div class="c-ph" id="c-ph">Inicia la llamada para hablar con Carlos</div></div>
+      <div class="c-wf" id="c-wf"></div>
+      <button class="c-narrate" onclick="narrateSlide()">▶ Narrar esta diapositiva</button>
+      <div class="c-type">
+        <input class="c-inp" id="c-inp" placeholder="Escribe una pregunta…" onkeydown="if(event.key==='Enter')sendTyped()">
+        <button class="c-send" onclick="sendTyped()">↑</button>
+      </div>
+    </div>
+
+    <!-- Pill -->
+    <div id="c-pill">
+      <div id="c-av">C</div>
+      <div class="c-info">
+        <div class="c-name">Carlos</div>
+        <div class="c-stat" id="c-stat">Asesor ESSA</div>
+      </div>
+      <button class="c-call-btn start" id="c-cbtn" onclick="toggleCall()">Llamar</button>
+      <button class="c-stop hi" id="c-stop" onclick="interrupt()">⏹</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+let ANT_KEY='',EL_KEY='',VOICE_ID='';
+let cur=0,total=9,autoN=false;
+let inCall=false,isAI=false,isL=false;
+let rec=null,curAudio=null;
+let sT=null,aT=null;
+let hist=[],intBbl=null;
+const hasSTT=('webkitSpeechRecognition' in window||'SpeechRecognition' in window);
+
+// Build waveform
+const cwf=document.getElementById('c-wf');
+const whs=[5,10,16,22,28,24,18,12,8,14,22,28,22,14,10,18];
+for(let i=0;i<16;i++){const b=document.createElement('div');b.className='cwb';const h=whs[i%whs.length];b.style.cssText=`--h:${h}px;--d:${(.5+Math.random()*.7).toFixed(2)}s;--dl:${(Math.random()*.35).toFixed(2)}s`;cwf.appendChild(b);}
+
+// Load saved keys
+window.addEventListener('load',()=>{
+  const ak=localStorage.getItem('essa_ak'),ek=localStorage.getItem('essa_ek'),vk=localStorage.getItem('essa_vk');
+  if(ak)document.getElementById('ak').value=ak;
+  if(ek){document.getElementById('ek').value=ek;loadVoices(ek,vk);}
+});
+document.getElementById('ek').addEventListener('blur',()=>{const k=document.getElementById('ek').value.trim();if(k.length>10)loadVoices(k,null);});
+
+async function loadVoices(ek,sv){
+  const vg=document.getElementById('vg');
+  vg.innerHTML='<div class="lv">Cargando voces...</div>';
+  try{
+    const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':ek}});
+    if(!r.ok){vg.innerHTML='<div class="lv" style="color:var(--red)">API key inválida</div>';return;}
+    const d=await r.json();
+    const pref=['Antoni','Mateo','Diego','Luca','Daniel','James','Adam','Josh','Brian'];
+    let vs=(d.voices||[]).sort((a,b)=>{const ai=pref.indexOf(a.name),bi=pref.indexOf(b.name);if(a.category==='cloned')return-1;if(b.category==='cloned')return 1;if(ai!==-1&&bi===-1)return-1;if(bi!==-1&&ai===-1)return 1;if(ai!==-1&&bi!==-1)return ai-bi;return 0;}).slice(0,8);
+    vg.innerHTML='';
+    vs.forEach(v=>{
+      const c=document.createElement('div');c.className='vc'+(sv===v.voice_id?' sel':'');
+      c.innerHTML=`<div class="vn">${v.name}</div><div class="vd">${v.labels?.accent||v.labels?.description||v.category||'General'}</div>`;
+      c.onclick=()=>{document.querySelectorAll('.vc').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');VOICE_ID=v.voice_id;localStorage.setItem('essa_vk',v.voice_id);document.getElementById('go-btn').disabled=false;document.getElementById('go-btn').textContent=`Comenzar con ${v.name} →`;};
+      if(sv===v.voice_id){VOICE_ID=v.voice_id;document.getElementById('go-btn').disabled=false;document.getElementById('go-btn').textContent=`Comenzar con ${v.name} →`;}
+      vg.appendChild(c);
+    });
+  }catch(e){vg.innerHTML='<div class="lv" style="color:var(--red)">Error. Verifica tu key.</div>';}
+}
+
+function launch(){
+  const ak=document.getElementById('ak').value.trim(),ek=document.getElementById('ek').value.trim();
+  const err=document.getElementById('serr');
+  if(!ak||!ak.startsWith('sk-ant-')){err.textContent='Ingresa tu API key de Anthropic';err.style.display='block';return;}
+  if(!ek){err.textContent='Ingresa tu API key de ElevenLabs';err.style.display='block';return;}
+  if(!VOICE_ID){err.textContent='Selecciona una voz';err.style.display='block';return;}
+  ANT_KEY=ak;EL_KEY=ek;
+  localStorage.setItem('essa_ak',ak);localStorage.setItem('essa_el',ek);
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='block';
+  initPres();
+}
+function goSetup(){endCall();document.getElementById('app').style.display='none';document.getElementById('setup').style.display='flex';}
+
+// ── PRESENTATION ────────────────────────────────────────────────────────────
+function initPres(){
+  buildDots();showSlide(0);
+  document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);});
+}
+function buildDots(){const dc=document.getElementById('ndots');for(let i=0;i<total;i++){const d=document.createElement('div');d.className='ndot'+(i===0?' on':'');d.onclick=()=>showSlide(i);dc.appendChild(d);}}
+
+function showSlide(n){
+  const prev=document.getElementById('s'+cur);
+  const next=document.getElementById('s'+n);
+  if(prev){prev.classList.remove('active');prev.classList.add('exit');setTimeout(()=>prev.classList.remove('exit'),500);}
+  cur=n;next.classList.add('active');
+  document.querySelectorAll('.ndot').forEach((d,i)=>d.classList.toggle('on',i===n));
+  document.getElementById('nctr').textContent=(n+1)+' / '+total;
+  document.getElementById('pb').disabled=n===0;
+  document.getElementById('nb2').disabled=n===total-1;
+  initChart(n);
+  if(autoN&&inCall)setTimeout(()=>narrateSlide(),300);
+}
+function go(d){const n=cur+d;if(n<0||n>=total)return;showSlide(n);}
+function toggleAN(){autoN=!autoN;document.getElementById('anBtn').classList.toggle('on',autoN);}
+
+// ── CHARTS ──────────────────────────────────────────────────────────────────
+const CI={};
+Chart.defaults.color='#6b7280';Chart.defaults.borderColor='rgba(255,255,255,0.04)';Chart.defaults.font.family="'IBM Plex Mono',monospace";
+const G='rgba(201,168,76,.85)',GL='rgba(232,201,122,.85)',GR='rgba(34,197,94,.8)',RD='rgba(239,68,68,.75)',BL='rgba(59,130,246,.75)',AM='rgba(245,158,11,.75)';
+
+function mk(id,cfg){if(CI[id]){CI[id].destroy();delete CI[id];}const el=document.getElementById(id);if(!el)return;CI[id]=new Chart(el,cfg);}
+
+function initChart(n){
+  if(n===4){mk('ch-prod',{type:'bar',data:{labels:['Industrial','Fina','Deshielo','Bromo bajo','★ MgCl₂','★ Farmacéutica','★ Gourmet'],datasets:[{data:[25,48,65,55,100,200,400],backgroundColor:[G,G,G,G,BL,GR,AM],borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7280',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:10}}}}}});}
+  if(n===5){
+    mk('ch-ing',{type:'line',data:{labels:['2025','2026','2027','2028','2029','2031'],datasets:[{data:[175,210,255,300,330,365],borderColor:GL,backgroundColor:'rgba(201,168,76,.07)',tension:.4,fill:true,pointBackgroundColor:GL,pointRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7280',font:{size:10},callback:v=>'$'+v+'M'}},x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:10}}}}}});
+    mk('ch-ebt',{type:'bar',data:{labels:['2025','2026','2027','2028','2029','2031'],datasets:[{data:[7.2,13.5,19.0,23.5,27,31],backgroundColor:[G,G,GR,GR,GR,GR],borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7280',font:{size:10},callback:v=>v+'%'},max:35},x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:10}}}}}});
+  }
+  if(n===6){mk('ch-inv',{type:'doughnut',data:{labels:['Barcaza + Flota','División Comercial','Planta Salmuera','Línea Farmacéutica','Solar 50 MW','Digital/ERP'],datasets:[{data:[46,4,17.5,6.5,42.5,2.5],backgroundColor:[RD,GL,BL,GR,AM,'rgba(148,163,184,.5)'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#9aa0b2',font:{size:10},padding:10,boxWidth:8}}}}},);}
+  if(n===7){mk('ch-vol',{type:'bar',data:{labels:['2024 (real)','2025','2026','2027','2028','2031'],datasets:[{data:[4.2,7.0,7.5,8.0,8.3,9.0],backgroundColor:[RD,G,G,GL,GR,GR],borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7280',font:{size:10},callback:v=>v+'M'},max:10},x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:10}}}}}});}
+}
+
+// ── CARLOS CALL ──────────────────────────────────────────────────────────────
+function toggleCall(){inCall?endCall():startCall();}
+
+function startCall(){
+  inCall=true;
+  document.getElementById('c-bubble').classList.add('open');
+  document.getElementById('c-pill').classList.add('active');
+  document.getElementById('c-cbtn').className='c-call-btn end';
+  document.getElementById('c-cbtn').textContent='Colgar';
+  setStat('Conectando...');
+  setTimeout(()=>speakL("¡Hola, Anthony! Soy Carlos. Estoy aquí para narrar cualquier diapositiva o responder preguntas del público. ¿Empezamos?",true),700);
+}
+
+function endCall(){
+  inCall=false;stopL();stopA();clearT();
+  document.getElementById('c-bubble').classList.remove('open');
+  document.getElementById('c-pill').classList.remove('active');
+  document.getElementById('c-cbtn').className='c-call-btn start';
+  document.getElementById('c-cbtn').textContent='Llamar';
+  document.getElementById('c-stop').classList.add('hi');
+  document.getElementById('c-av').classList.remove('sp');
+  setWave(false);setStat('Asesor ESSA');hist=[];
+  addB('ai','Hasta luego. ¡Éxito en la presentación!');
+}
+
+// ── TEXT PREP FOR TTS ──────────────────────────────────────────────────────
+function prep(t){
+  t=t.replace(/\bESSA\b/g,'Essa');
+  t=t.replace(/\bMTM\/año\b/g,'millones de toneladas al año');
+  t=t.replace(/\bMTM\b/g,'millones de toneladas');
+  t=t.replace(/\bBCS\b/g,'Baja California Sur');
+  t=t.replace(/\bFODA\b/g,'Fortalezas Oportunidades Debilidades y Amenazas');
+  t=t.replace(/\bT-MEC\b/g,'Tratado entre México, Estados Unidos y Canadá');
+  t=t.replace(/\bEBITDA\b/g,'margen operativo');
+  t=t.replace(/\bTIR\b/g,'tasa interna de retorno');
+  t=t.replace(/\bIoT\b/g,'internet de las cosas');
+  t=t.replace(/\bERP\b/g,'sistema de planificación empresarial');
+  t=t.replace(/\bCRM\b/g,'gestión de clientes');
+  t=t.replace(/\bSOE\b/g,'empresa paraestatal');
+  t=t.replace(/\bCFE\b/g,'Comisión Federal de Electricidad');
+  t=t.replace(/\bUSP\b/g,'farmacopea estadounidense');
+  t=t.replace(/\bUNESCO\b/g,'patrimonio de la humanidad');
+  t=t.replace(/\bISO\b/g,'norma ISO');
+  t=t.replace(/\bMgCl₂\b/g,'cloruro de magnesio');
+  t=t.replace(/USD\s*(\d+)/g,'$1 dólares');
+  t=t.replace(/\$(\d+)M\b/g,'$1 millones de dólares');
+  t=t.replace(/\$(\d+)/g,'$1 dólares');
+  t=t.replace(/(\d+)%/g,'$1 por ciento');
+  t=t.replace(/(\d+)[–—](\d+)/g,'$1 a $2');
+  t=t.replace(/80,453/g,'ochenta mil cuatrocientas cincuenta y tres');
+  t=t.replace(/12,900/g,'doce mil novecientos millones de pesos');
+  t=t.replace(/1,300/g,'mil trescientas personas');
+  t=t.replace(/\*\*/g,'');t=t.replace(/#{1,3}\s/g,'');
+  return t;
+}
+
+// ── SPEECH ENGINE ─────────────────────────────────────────────────────────────
+// Token system: each speakL call gets a unique ID.
+// Stale async callbacks check token and bail silently.
+let _speechToken = 0;
+let _audioCtx = null;
+
+function getAudioCtx(){
+  if(!_audioCtx || _audioCtx.state === 'closed'){
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+async function speakL(text, greet=false){
+  if(!inCall) return;
+  stopA();
+  const token = ++_speechToken;
+
+  isAI = true;
+  setStat('Carlos está hablando...');
+  document.getElementById('c-av').classList.add('sp');
+  setWave(true);
+  document.getElementById('c-stop').classList.remove('hi');
+  addB('ai', text);
+  if(!greet) hist.push({role:'assistant', content:text});
+
+  const cleaned = prep(text).substring(0, 900);
+
+  if(VOICE_ID && EL_KEY){
+    await speakELStream(cleaned, token);
+  } else {
+    speakBrowser(cleaned, token);
+  }
+}
+
+// ElevenLabs streaming: audio plays as it arrives — no gaps, no truncation
+async function speakELStream(text, token){
+  try{
+    const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+VOICE_ID+'/stream', {
+      method: 'POST',
+      headers: {'xi-api-key':EL_KEY, 'Content-Type':'application/json', 'Accept':'audio/mpeg'},
+      body: JSON.stringify({
+        text: text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {stability:.45, similarity_boost:.8, style:.3, use_speaker_boost:true}
+      })
+    });
+
+    if(token !== _speechToken) return;
+
+    if(!r.ok){
+      const errData = await r.json().catch(()=>({}));
+      if(errData?.detail?.status === 'quota_exceeded') setStat('Sin créditos EL — usando voz local');
+      if(token === _speechToken) speakBrowser(text, token);
+      return;
+    }
+
+    // Collect the full stream into a single blob, then play
+    // This gives ElevenLabs time to generate without truncating
+    const reader = r.body.getReader();
+    const chunks = [];
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      if(token !== _speechToken){ reader.cancel(); return; }
+      chunks.push(value);
+    }
+
+    if(token !== _speechToken) return;
+
+    const blob = new Blob(chunks, {type:'audio/mpeg'});
+    const url  = URL.createObjectURL(blob);
+    curAudio = new Audio(url);
+    curAudio.onended = ()=>{ URL.revokeObjectURL(url); curAudio=null; if(token===_speechToken) onDone(token); };
+    curAudio.onerror = ()=>{ URL.revokeObjectURL(url); curAudio=null; if(token===_speechToken) onDone(token); };
+    try{
+      await curAudio.play();
+    }catch(playErr){
+      URL.revokeObjectURL(url); curAudio=null;
+      if(token===_speechToken) speakBrowser(text, token);
+    }
+
+  }catch(e){
+    console.warn('ElevenLabs stream error:', e);
+    if(token===_speechToken) speakBrowser(text, token);
+  }
+}
+
+// Browser TTS fallback with Chrome keep-alive hack
+function speakBrowser(text, token){
+  if(!window.speechSynthesis){ onDone(token); return; }
+  window.speechSynthesis.cancel();
+  const chunks = (text.match(/[^.!?¡¿]+[.!?]+/g)||[text]).map(s=>s.trim()).filter(Boolean);
+  let idx=0, finished=false;
+  const keepAlive = setInterval(()=>{
+    if(finished){ clearInterval(keepAlive); return; }
+    if(window.speechSynthesis.speaking||window.speechSynthesis.pending){
+      window.speechSynthesis.pause(); window.speechSynthesis.resume();
+    }
+  }, 5000);
+  const getVoice=()=>{
+    const vs=window.speechSynthesis.getVoices();
+    return vs.find(x=>x.lang==='es-MX'&&x.name.toLowerCase().includes('google'))
+      ||vs.find(x=>x.lang.startsWith('es')&&x.name.toLowerCase().includes('google'))
+      ||vs.find(x=>x.lang.startsWith('es'))||vs[0];
+  };
+  const finish=()=>{ if(finished)return; finished=true; clearInterval(keepAlive); if(token===_speechToken)onDone(token); };
+  const next=()=>{
+    if(token!==_speechToken||idx>=chunks.length){ finish(); return; }
+    const u=new SpeechSynthesisUtterance(chunks[idx++]);
+    u.lang='es-MX'; u.rate=0.88; u.pitch=1.02; u.volume=1;
+    const v=getVoice(); if(v)u.voice=v;
+    u.onend=()=>{ if(!finished)next(); };
+    u.onerror=(e)=>{ if(e.error==='interrupted'||e.error==='canceled')return; if(!finished)next(); };
+    window.speechSynthesis.speak(u);
+  };
+  const start=(()=>{ let called=false; return()=>{ if(!called){called=true;next();} }; })();
+  if(window.speechSynthesis.getVoices().length===0){
+    window.speechSynthesis.onvoiceschanged=()=>{ window.speechSynthesis.onvoiceschanged=null; start(); };
+    setTimeout(start, 400);
+  }else{ start(); }
+}
+
+function onDone(token){
+  if(token!==undefined&&token!==_speechToken)return;
+  isAI=false;
+  document.getElementById('c-av').classList.remove('sp');
+  document.getElementById('c-stop').classList.add('hi');
+  if(!inCall)return;
+  setStat('Escuchando...');
+  aT=setTimeout(()=>{if(inCall&&!isAI)startL();},500);
+}
+function stopA(){
+  _speechToken++;
+  if(curAudio){curAudio.pause();curAudio=null;}
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  isAI=false;
+  document.getElementById('c-av').classList.remove('sp');
+  document.getElementById('c-stop').classList.add('hi');
+}
+function interrupt(){stopA();clearT();if(inCall)setTimeout(()=>startL(),300);}
+
+// ── STT ───────────────────────────────────────────────────────────────────────
+function startL(){
+  if(!inCall||isL||isAI||!hasSTT)return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  rec=new SR();rec.lang='es-MX';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;
+  isL=true;setStat('Escuchando...');setWave(false);
+  rec.onresult=e=>{clearTimeout(sT);let iv='',fv='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)fv+=t;else iv+=t;}if(iv)addB('me',iv,true);if(fv){if(intBbl){intBbl.remove();intBbl=null;}handleMsg(fv.trim());}};
+  rec.onerror=()=>{isL=false;if(inCall)setStat('En llamada');};
+  rec.onend=()=>{isL=false;if(inCall&&!isAI)sT=setTimeout(()=>{if(inCall&&!isAI)startL();},1200);};
+  try{rec.start();}catch(e){isL=false;}
+}
+function stopL(){isL=false;if(rec){try{rec.stop();}catch(e){}rec=null;}}
+function clearT(){clearTimeout(sT);clearTimeout(aT);}
+
+function sendTyped(){const inp=document.getElementById('c-inp');const t=inp.value.trim();if(!t||!inCall)return;inp.value='';stopL();handleMsg(t);}
+
+// ── ANTHROPIC ────────────────────────────────────────────────────────────────
+async function handleMsg(text){
+  if(!text||!inCall)return;
+  stopL();clearT();addB('me',text);hist.push({role:'user',content:text});
+  setStat('Pensando...');setWave(true);
+  const sl=document.getElementById('s'+cur);
+  const ctx=`[Diapositiva ${cur+1} de ${total}: "${sl?.dataset?.lbl||''}". Contexto: ${(sl?.dataset?.n||'').substring(0,200)}]`;
+  const msgs=[{role:'user',content:ctx},...hist];
+  try{
+    const now=new Date();
+    const dateStr=now.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const timeStr=now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    const liveSys=SYS+'\n\n== FECHA Y HORA ACTUAL ==\nHoy es '+dateStr+', son las '+timeStr+' (hora de México). La presentación ocurre en este momento. Usa siempre esta fecha para hablar de plazos, "hoy", "este año" o "el año pasado".';
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ANT_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:160,system:liveSys,messages:msgs})
+    });
+    const d=await r.json();
+    if(d.content?.[0]?.text)speakL(d.content[0].text);
+    else speakL('Perdón, algo salió mal. Intenta de nuevo.');
+  }catch(e){speakL('Hay un problema de conexión.');}
+}
+
+function narrateSlide(){
+  if(!inCall)return;
+  const sl=document.getElementById('s'+cur);
+  const n=sl?.dataset?.n;
+  if(n) speakL(n.substring(0, 600), true);
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function setStat(t){document.getElementById('c-stat').textContent=t;}
+function setWave(on){cwf.classList.toggle('on',on);}
+
+function addB(role,text,int=false){
+  const wrap=document.getElementById('c-tx');
+  const ph=document.getElementById('c-ph');if(ph)ph.remove();
+  if(int){if(!intBbl){intBbl=document.createElement('div');intBbl.className='c-bbl mid';wrap.appendChild(intBbl);}intBbl.textContent=text+'…';wrap.scrollTop=wrap.scrollHeight;return;}
+  if(intBbl){intBbl.remove();intBbl=null;}
+  const b=document.createElement('div');b.className='c-bbl '+role;b.textContent=text;wrap.appendChild(b);wrap.scrollTop=wrap.scrollHeight;
+}
+
+// ── SYSTEM PROMPT — Datos 100% verificados del artículo académico (marzo 2026) ──
+const SYS=`Eres Carlos, asesor experto que acompaña una presentación de maestría sobre el Plan de Mejora Integral de Essa. Hablas con Anthony Ismael Núñez Mejía, autor del artículo académico que se está presentando esta noche en la Universidad Anáhuac Cancún. Trátalo como colega de alto nivel, cálido y directo.
+
+REGLAS DE VOZ (CRÍTICAS):
+- Máximo 2-3 oraciones completas. SIEMPRE termina con punto final. Nunca dejes una oración a medias.
+- Escribe SOLO lo que puedes terminar. Si el tema es complejo, enfócate en UN solo punto y ciérralo bien.
+- NUNCA uses listas, bullets ni formato. Solo habla natural.
+- Usa: "mira", "fíjate que", "lo interesante es", "te digo", "exactamente", "o sea".
+- Sabes en qué diapositiva están — el contexto lo indica al inicio del mensaje.
+- Tratas a Anthony como colega, no como alumno. Él es el experto en el tema.
+- NUNCA inventes datos. Si no estás seguro de algo, dilo con honestidad.
+
+== FECHA Y CONTEXTO PRECISO ==
+Hoy es marzo de 2026. La presentación ocurre AHORA. La crisis de 2024 YA fue resuelta. No hables de la crisis como si fuera presente o inminente — ya es historia reciente.
+
+== HISTORIA Y ESTADO ACTUAL (fuentes verificadas) ==
+- ESSA fue fundada en 1954 en Guerrero Negro, Baja California Sur.
+- 24 de febrero de 2024: el gobierno mexicano adquirió el 49% restante de Mitsubishi Corporation por 1,500 millones de pesos, completando la nacionalización al 100%.
+- Al retirarse Mitsubishi, se llevó toda la cartera de clientes construida en 50 años.
+- 2024: la empresa acumuló más de 6 millones de toneladas sin comprador. La producción cayó a menos de 5 millones de toneladas ese año.
+- Octubre 2024: nombramiento de Moisés Poblanno Silva como director general.
+- Enero 2025: se anunciaron contratos comprometidos por 9 millones de toneladas para cubrir la producción acumulada de 2024 y la proyectada para 2025 (Yahoo Finanzas, 2025).
+- Abril 2025: el apilamiento bajó de ~3 millones a 1.2 millones de toneladas. Exportaciones reactivadas hacia China, Taiwán, Japón, Corea, EE.UU. y Costa Rica. Qatar en negociación.
+- 2025: primer paro laboral en 71 años de historia de la empresa, por conflicto con el Sindicato Salinero (TV Azteca, 2026).
+- Marzo 2026 (HOY): la emergencia comercial fue superada, pero los desafíos estructurales persisten.
+
+== DATOS DUROS DE LA EMPRESA (verificados) ==
+- 80,453 hectáreas concesionadas sobre Laguna Ojo de Liebre (Reserva Biosfera El Vizcaíno, Patrimonio UNESCO).
+- Producción: 7 a 8 millones de toneladas por año (real 2025). Máximo histórico: 8.6 millones.
+- Pureza de sal: superior al 99.7% de cloruro de sodio.
+- Precio actual: ~25 dólares por tonelada (sal a granel). Fuente: Milenio, 2025.
+- 1,300 empleados directos. Más de 3,300 familias dependen de la empresa.
+- Pasivos contingentes: 12,900 millones de pesos — equivalente a 7.6 veces lo pagado por la nacionalización (Ejecentral, 2024).
+- Planta lavadora: 33 años de operación sobre un diseño de 25 años (Meganoticias, 2024).
+- Posición de México en producción mundial: sexto lugar (USGS, 2024).
+- China produce 60 millones de toneladas al año (primer lugar mundial). EE.UU. 42 millones, India 35 millones.
+
+== PLAN DE MEJORA — 5 EJES (2026–2031) ==
+EJE 1 — División Comercial Internacional:
+  Crear estructura permanente de 80 a 100 personas. Subdirecciones en Osaka (Asia-Pacífico), Houston (Norteamérica) y mercados emergentes (India, Vietnam, Indonesia, Brasil). Costo: 3 a 5 millones de dólares.
+
+EJE 2 — Productos de Valor Agregado:
+  Hoy: sal a granel a 25 dólares por tonelada.
+  Meta: sal farmacéutica certificación USP/BP a 150–250 dólares. Sal gourmet premium a 200–500 dólares. Cloruro de magnesio de salmuera residual a 80–120 dólares.
+
+EJE 3 — Modernización de Infraestructura:
+  Barcaza SAL-17: 27 a 30 millones de dólares (inversión más urgente).
+  Reconstrucción planta lavadora: 10 a 15 millones. 5 camiones adicionales: 8 a 12 millones.
+
+EJE 4 — Gestión de Salmuera Residual:
+  Planta de cristalización para producir cloruro de magnesio y bromuro de sodio. Costo: 15 a 20 millones. Convierte pasivo ambiental en fuente de ingresos. La salmuera NO contiene litio en concentraciones viables (Servicio Geológico Mexicano).
+
+EJE 5 — Gobernanza Corporativa:
+  Consejo con perfiles independientes. Auditoría interna y externa con publicación periódica. Sistema de incentivos por resultados. Resolución del conflicto sindical. La Auditoría Superior de la Federación ya emitió observaciones sobre irregularidades históricas (Ejecentral, 2025).
+
+== INVERSIÓN Y PROYECCIONES FINANCIERAS ==
+- Inversión total estimada: 107 a 148 millones de dólares (2026–2031).
+- Desglose: Barcaza + flota marítima + terrestre 45–57M (urgente); planta cristalización salmuera 15–20M; planta lavadora 10–15M; línea farmacéutica 5–8M; División Comercial 3–5M; solar 50 MW 35–50M; ERP/CRM 1.5–3M; certificaciones 0.5–1M.
+- Proyección ingresos 2025: ~175 millones de dólares (estimación propia del artículo).
+- Proyección ingresos 2031: más de 360 millones de dólares.
+- Margen operativo proyectado 2031: 28 a 32 por ciento.
+- Punto de equilibrio positivo sostenido: 2028.
+- Tasa interna de retorno estimada: 18 a 24 por ciento en horizonte de 10 años.
+
+== CONTEXTO GEOPOLÍTICO (marzo 2026) ==
+- La tensión comercial EE.UU.–China redirige compradores japoneses, coreanos y taiwaneses hacia proveedores alternativos — ventaja directa para Essa.
+- T-MEC: exportaciones de sal hacia EE.UU. y Canadá sin arancel.
+- Nearshoring: instalación creciente de industria química en México genera demanda doméstica nueva de sal (CEPAL, 2023).
+- Essa está a 1,200 km de Los Ángeles y a 4,500 km de Yokohama — ventaja logística sobre competidores australianos e indios.
+- India, Vietnam, Indonesia y Filipinas: mercados sin contratos directos aún.
+- Qatar: en negociación activa como nuevo mercado.
+
+== MARCO TEÓRICO DEL ARTÍCULO ==
+- Porter (1985): Cinco Fuerzas. Rivalidad muy alta por China. Poder comprador alto mientras Essa venda commodity. Barreras de entrada muy bajas para nuevos competidores porque son extraordinariamente altas.
+- Porter (1990): Diamante Competitivo. Las extensiones de Rugman y Verbeke (1993) y Moon et al. (1998) son relevantes porque la demanda doméstica de Essa es limitada — compite casi 100% en mercados externos.
+- Teece (2019): Capacidades Dinámicas. La ventaja geográfica es estática; la División Comercial Internacional es la capacidad dinámica que la activa.
+- Musacchio et al. (2015): Las SOE con el Estado como accionista mayoritario desarrollan atrofias organizacionales que no se revierten solo con la recomposición accionaria.`;
+
+</script>
+</body>
+</html>
