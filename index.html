@@ -1159,7 +1159,14 @@ function onDone(token){
 }
 function stopA(){
   _speechToken++;
-  if(curAudio){curAudio.pause();curAudio=null;}
+  if(curAudio){
+    try{
+      // AudioBufferSourceNode usa stop(), Audio usa pause()
+      if(typeof curAudio.stop === 'function') curAudio.stop();
+      else if(typeof curAudio.pause === 'function') curAudio.pause();
+    }catch(e){}
+    curAudio=null;
+  }
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   isAI=false;
   document.getElementById('c-av').classList.remove('sp');
