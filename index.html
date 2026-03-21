@@ -726,11 +726,10 @@ async function narrateWithEL(text, onDoneCallback){
   const elKey = getNarELKey();
   const token = ++_narToken;
 
-  // Sin clave ElevenLabs — no narrar, no browser fallback
+  // Sin clave — parar silenciosamente. NUNCA avanzar diapositivas en caso de error.
   if(!elKey){
     console.warn('Auto-narrar: ElevenLabs key no disponible');
-    if(onDoneCallback) onDoneCallback();
-    return;
+    return; // NO llama onDoneCallback
   }
 
   try{
@@ -750,10 +749,10 @@ async function narrateWithEL(text, onDoneCallback){
 
     if(token !== _narToken) return;
 
+    // Error de API (cuota, key inválida, etc.) — parar silenciosamente
     if(!r.ok){
-      console.warn('ElevenLabs error:', r.status);
-      if(token === _narToken && onDoneCallback) onDoneCallback();
-      return;
+      console.warn('ElevenLabs error:', r.status, r.statusText);
+      return; // NO llama onDoneCallback
     }
 
     const reader = r.body.getReader();
@@ -770,19 +769,31 @@ async function narrateWithEL(text, onDoneCallback){
     const url  = URL.createObjectURL(blob);
     _narAudio = new Audio(url);
     _narAudio._url = url;
+
+    // Solo avanzar si el audio terminó NATURALMENTE
     _narAudio.onended = ()=>{
-      URL.revokeObjectURL(url); _narAudio=null;
+      URL.revokeObjectURL(url); _narAudio = null;
       if(token === _narToken && onDoneCallback) onDoneCallback();
     };
+    // Error de audio — parar silenciosamente, NO avanzar
     _narAudio.onerror = ()=>{
-      URL.revokeObjectURL(url); _narAudio=null;
-      if(token === _narToken && onDoneCallback) onDoneCallback();
+      URL.revokeObjectURL(url); _narAudio = null;
+      console.warn('Audio playback error');
+      // NO llama onDoneCallback
     };
-    await _narAudio.play();
+
+    // Intentar reproducir — si el navegador lo bloquea, parar silenciosamente
+    try{
+      await _narAudio.play();
+    } catch(playErr){
+      URL.revokeObjectURL(url); _narAudio = null;
+      console.warn('Autoplay bloqueado:', playErr);
+      // NO llama onDoneCallback
+    }
 
   }catch(e){
     console.warn('narrateWithEL error:', e);
-    if(token === _narToken && onDoneCallback) onDoneCallback();
+    // NO llama onDoneCallback
   }
 }
 
@@ -804,7 +815,7 @@ function narrateSlide(){
   const sl = document.getElementById('s' + cur);
   const n  = sl?.dataset?.n;
   if(!n) return;
-  narrateWithEL(n.substring(0, 1200), ()=>{
+  narrateWithEL(n.substring(0, 2500), ()=>{
     if(!autoN) return;
     if(cur < total - 1){
       setTimeout(()=>{ if(autoN) advanceAndNarrate(); }, 1000);
