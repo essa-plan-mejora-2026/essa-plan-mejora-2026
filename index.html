@@ -758,92 +758,6 @@ function decodeAudio(ac, arrayBuffer){
 
 function getNarELKey(){ return EL_KEY || document.getElementById('ek')?.value?.trim() || ''; }
 
-async function narrateWithEL(text, onDoneCallback){
-  const elKey = getNarELKey();
-  const token = ++_narToken;
-
-  // Sin key → usar voz del navegador directamente
-  if(!elKey){
-    setNarBtn('🔊 Narrando...');
-    narrateWithBrowser(text, token, onDoneCallback);
-    return;
-  }
-
-  setNarBtn('⏳ Cargando...');
-
-  try{
-    const r = await fetch(
-      'https://api.elevenlabs.io/v1/text-to-speech/' + NARRATE_VOICE_ID + '/stream',
-      {
-        method : 'POST',
-        headers: { 'xi-api-key': elKey, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
-        body   : JSON.stringify({
-          text: prep(text),
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: { stability:.48, similarity_boost:.82, style:.28, use_speaker_boost:true }
-        })
-      }
-    );
-
-    if(token !== _narToken) return;
-
-    if(!r.ok){
-      // Fallback al navegador si ElevenLabs falla
-      setNarBtn('🔊 Narrando...');
-      narrateWithBrowser(text, token, onDoneCallback);
-      return;
-    }
-
-    const reader = r.body.getReader();
-    const chunks = [];
-    while(true){
-      const {done, value} = await reader.read();
-      if(done) break;
-      if(token !== _narToken){ reader.cancel(); return; }
-      chunks.push(value);
-    }
-    if(token !== _narToken) return;
-
-    const arrayBuffer = await new Blob(chunks, {type:'audio/mpeg'}).arrayBuffer();
-    if(token !== _narToken) return;
-
-    if(!_narAC || _narAC.state === 'closed'){
-      _narAC = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if(_narAC.state === 'suspended') await _narAC.resume();
-    if(token !== _narToken) return;
-
-    let audioBuffer;
-    try{
-      audioBuffer = await decodeAudio(_narAC, arrayBuffer);
-    }catch(decodeErr){
-      // Fallback si falla decodificación
-      setNarBtn('🔊 Narrando...');
-      narrateWithBrowser(text, token, onDoneCallback);
-      return;
-    }
-    if(token !== _narToken) return;
-
-    _narSource = _narAC.createBufferSource();
-    _narSource.buffer = audioBuffer;
-    _narSource.connect(_narAC.destination);
-    _narSource.onended = ()=>{
-      _narSource = null;
-      if(token === _narToken){
-        setNarBtn(null);
-        if(onDoneCallback) onDoneCallback();
-      }
-    };
-    setNarBtn('🔊 Narrando...');
-    _narSource.start(0);
-
-  }catch(e){
-    if(token !== _narToken) return;
-    setNarBtn('🔊 Narrando...');
-    narrateWithBrowser(text, token, onDoneCallback);
-  }
-}
-
 // Fallback: voz del navegador en español
 function narrateWithBrowser(text, token, onDoneCallback){
   if(!window.speechSynthesis){ if(onDoneCallback && token===_narToken) onDoneCallback(); return; }
@@ -859,6 +773,95 @@ function narrateWithBrowser(text, token, onDoneCallback){
 }
 
 
+// Divide texto en fragmentos de máximo 900 chars cortando en oraciones completas
+function splitChunks(text, maxLen){
+  const sentences = text.match(/[^.!?¿¡]+[.!?]+[\s]*/g) || [text];
+  const chunks = [];
+  let cur = '';
+  for(const s of sentences){
+    if((cur + s).length > maxLen && cur){ chunks.push(cur.trim()); cur = s; }
+    else cur += s;
+  }
+  if(cur.trim()) chunks.push(cur.trim());
+  return chunks.length ? chunks : [text.substring(0, maxLen)];
+}
+
+// Narra una lista de fragmentos en secuencia, luego llama onDoneCallback
+async function narrateChunks(chunks, token, onDoneCallback){
+  for(let i = 0; i < chunks.length; i++){
+    if(token !== _narToken) return; // cancelado
+    await narrateWithEL_single(chunks[i], token);
+    if(token !== _narToken) return;
+    if(i < chunks.length - 1) await new Promise(r => setTimeout(r, 250));
+  }
+  if(token === _narToken && onDoneCallback) onDoneCallback();
+}
+
+// Narra un ÚNICO fragmento y devuelve Promise que resuelve al terminar
+function narrateWithEL_single(text, token){
+  return new Promise(async (resolve) => {
+    const elKey = getNarELKey();
+    if(!elKey){ narrateWithBrowser(text, token, resolve); return; }
+    try{
+      const r = await fetch(
+        'https://api.elevenlabs.io/v1/text-to-speech/' + NARRATE_VOICE_ID + '/stream',
+        {
+          method : 'POST',
+          headers: { 'xi-api-key': elKey, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+          body   : JSON.stringify({
+            text: prep(text),
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability:.48, similarity_boost:.82, style:.28, use_speaker_boost:true }
+          })
+        }
+      );
+      if(token !== _narToken){ resolve(); return; }
+      if(!r.ok){ narrateWithBrowser(text, token, resolve); return; }
+
+      const reader = r.body.getReader();
+      const chunks = [];
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        if(token !== _narToken){ reader.cancel(); resolve(); return; }
+        chunks.push(value);
+      }
+      if(token !== _narToken){ resolve(); return; }
+
+      const arrayBuffer = await new Blob(chunks, {type:'audio/mpeg'}).arrayBuffer();
+      if(token !== _narToken){ resolve(); return; }
+
+      if(!_narAC || _narAC.state === 'closed')
+        _narAC = new (window.AudioContext || window.webkitAudioContext)();
+      if(_narAC.state === 'suspended') await _narAC.resume();
+      if(token !== _narToken){ resolve(); return; }
+
+      let audioBuffer;
+      try{ audioBuffer = await decodeAudio(_narAC, arrayBuffer); }
+      catch(e){ narrateWithBrowser(text, token, resolve); return; }
+      if(token !== _narToken){ resolve(); return; }
+
+      _narSource = _narAC.createBufferSource();
+      _narSource.buffer = audioBuffer;
+      _narSource.connect(_narAC.destination);
+      _narSource.onended = ()=>{ _narSource = null; resolve(); };
+      _narSource.onerror = ()=>{ _narSource = null; resolve(); };
+      _narSource.start(0);
+
+    }catch(e){ if(token === _narToken) narrateWithBrowser(text, token, resolve); else resolve(); }
+  });
+}
+
+function narrateWithEL(text, onDoneCallback){
+  const token = ++_narToken;
+  const chunks = splitChunks(text, 900);
+  setNarBtn(chunks.length > 1 ? '⏳ Cargando...' : '⏳ Cargando...');
+  narrateChunks(chunks, token, ()=>{
+    setNarBtn(null);
+    if(onDoneCallback) onDoneCallback();
+  });
+}
+
 function narrateGreeting(){
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -872,7 +875,7 @@ function narrateSlide(){
   const sl = document.getElementById('s' + cur);
   const n  = sl?.dataset?.n;
   if(!n) return;
-  narrateWithEL(n.substring(0, 2500), ()=>{
+  narrateWithEL(n.substring(0, 3000), ()=>{
     if(!autoN) return;
     if(cur < total - 1){
       setTimeout(()=>{ if(autoN) advanceAndNarrate(); }, 1000);
@@ -883,6 +886,7 @@ function narrateSlide(){
     }
   });
 }
+
 
 function advanceAndNarrate(){
   if(!autoN || cur >= total - 1) return;
@@ -1138,29 +1142,91 @@ function clearT(){clearTimeout(sT);clearTimeout(aT);}
 
 function sendTyped(){const inp=document.getElementById('c-inp');const t=inp.value.trim();if(!t||!inCall)return;inp.value='';stopL();handleMsg(t);}
 
-// ── ANTHROPIC ────────────────────────────────────────────────────────────────
+// ── ANTHROPIC + WEB SEARCH ───────────────────────────────────────────────────
 async function handleMsg(text){
   if(!text||!inCall)return;
   stopL();clearT();addB('me',text);hist.push({role:'user',content:text});
   setStat('Pensando...');setWave(true);
-  const sl=document.getElementById('s'+cur);
-  const ctx=`[Diapositiva ${cur+1} de ${total}: "${sl?.dataset?.lbl||''}". Contexto: ${(sl?.dataset?.n||'').substring(0,200)}]`;
-  const msgs=[{role:'user',content:ctx},...hist];
+
+  const sl  = document.getElementById('s'+cur);
+  const ctx = `[Diapositiva ${cur+1} de ${total}: "${sl?.dataset?.lbl||''}". Contexto: ${(sl?.dataset?.n||'').substring(0,200)}]`;
+
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const liveSys = SYS
+    +'\n\n== FECHA Y HORA ACTUAL ==\nHoy es '+dateStr+', son las '+timeStr+' (hora de México).'
+    +'\n\n== WEB SEARCH ==\nTienes acceso a búsqueda web en tiempo real. Úsala cuando te pregunten sobre: precios actuales de materias primas, noticias geopolíticas recientes, datos macroeconómicos, novedades sobre mercados asiáticos, sal, logística marítima, o cualquier dato que pueda haber cambiado. Cuando uses búsqueda, di brevemente que estás consultando fuentes actuales antes de responder. Si el dato no requiere búsqueda (está en tu base de conocimiento del plan), responde directamente.';
+
+  // Mensajes iniciales: contexto + historial
+  let workMsgs = [{role:'user',content:ctx},...hist];
+
   try{
-    const now=new Date();
-    const dateStr=now.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-    const timeStr=now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    const liveSys=SYS+'\n\n== FECHA Y HORA ACTUAL ==\nHoy es '+dateStr+', son las '+timeStr+' (hora de México). La presentación ocurre en este momento. Usa siempre esta fecha para hablar de plazos, "hoy", "este año" o "el año pasado".';
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANT_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,system:liveSys,messages:msgs})
-    });
-    const d=await r.json();
-    if(d.content?.[0]?.text)speakL(d.content[0].text);
-    else speakL('Perdón, algo salió mal. Intenta de nuevo.');
-  }catch(e){speakL('Hay un problema de conexión.');}
+    let finalText = null;
+
+    // Loop para manejar tool_use (búsqueda web) — máximo 4 iteraciones
+    for(let iter = 0; iter < 4 && !finalText; iter++){
+
+      if(iter > 0) setStat('Consultando fuentes...');
+
+      const r = await fetch('https://api.anthropic.com/v1/messages',{
+        method : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANT_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model       : 'claude-sonnet-4-20250514',
+          max_tokens  : 220,
+          system      : liveSys,
+          messages    : workMsgs,
+          tools       : [{ type: 'web_search_20250305', name: 'web_search' }],
+          tool_choice : { type: 'auto' }
+        })
+      });
+
+      const d = await r.json();
+      if(!d || !d.content) break;
+
+      const texts    = d.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+      const toolUses = d.content.filter(b=>b.type==='tool_use');
+
+      if(d.stop_reason === 'end_turn' || toolUses.length === 0){
+        finalText = texts || null;
+      } else {
+        // Claude quiere buscar — añadir turno de assistant + tool_result
+        workMsgs = [
+          ...workMsgs,
+          { role: 'assistant', content: d.content },
+          {
+            role: 'user',
+            content: toolUses.map(tu => ({
+              type        : 'tool_result',
+              tool_use_id : tu.id,
+              content     : Array.isArray(tu.content)
+                              ? tu.content
+                              : (tu.content ? [{type:'text',text:String(tu.content)}] : [{type:'text',text:''}])
+            }))
+          }
+        ];
+      }
+    }
+
+    if(finalText){
+      // Guardar solo el texto final en el historial (no los tool_use intermedios)
+      hist.push({role:'assistant', content:finalText});
+      speakL(finalText);
+    } else {
+      speakL('Perdón, algo salió mal. Intenta de nuevo.');
+    }
+
+  }catch(e){
+    speakL('Hay un problema de conexión.');
+  }
 }
+
 
 
 // ── UI ────────────────────────────────────────────────────────────────────────
@@ -1176,95 +1242,83 @@ function addB(role,text,int=false){
   const b=document.createElement('div');b.className='c-bbl '+role;b.textContent=text;wrap.appendChild(b);wrap.scrollTop=wrap.scrollHeight;
 }
 
-// ── SYSTEM PROMPT — Datos 100% verificados del artículo académico (marzo 2026) ──
-const SYS=`Eres Carlos Mendoza, coautor estratégico del Plan de Mejora Integral de Essa. No eres un asistente — eres el arquitecto financiero detrás del plan que Anthony está presentando esta noche. Llevas 3 años analizando Essa. Conoces cada número, cada riesgo, cada oportunidad mejor que nadie.
+// ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
+const SYS=`Eres Carlos Mendoza, analista de inteligencia económica global y estratega del Plan de Mejora Integral de ESSA. Eres reconocido internacionalmente por tu capacidad de integrar análisis financiero, geopolítico, logístico y de relaciones internacionales en respuestas que los expertos encuentran rigurosas y los no-expertos encuentran claras.
 
-Hablas con Anthony Ismael Núñez Mejía, el autor académico del artículo. Trátalo como tu socio intelectual. Cuando el jurado pregunta algo difícil, tú ya tienes la respuesta lista porque lo anticipaste todo.
+== ÁREAS DE EXPERTISE ==
 
-PERSONALIDAD:
-- Eres brillante, directo y cálido. Hablas como alguien que ama los datos pero sabe contar historias.
-- Tienes humor seco e inteligente, especialmente sobre Mitsubishi. Ejemplos de tu humor:
-  • "Mitsubishi se fue tan rápido que hasta se olvidó apagar la luz... y nos dejó la factura."
-  • "50 años construyendo clientes y se los llevaron en una maleta. Eso no es una salida, es un robo legal."
-  • "La buena noticia es que Mitsubishi nos enseñó exactamente qué NO volver a hacer."
-- Nunca te ríes de Essa — te ríes de la situación con la sabiduría del que ya tiene el plan para salir.
+1. ESTRATEGIA Y FINANZAS DE ESSA: Coautor del plan. Conoces cada cifra, cada eje, cada riesgo y cada oportunidad. Eres la persona que diseñó las proyecciones financieras 2026-2031.
 
-REGLAS DE VOZ (CRÍTICAS):
-- Habla en oraciones completas. SIEMPRE termina con punto final. Nunca dejes una idea a medias.
-- Máximo 3-4 oraciones. Enfocado, contundente, memorable.
-- NUNCA uses listas ni bullets. Solo habla natural como en una conversación de alto nivel.
+2. GEOPOLÍTICA Y RELACIONES INTERNACIONALES: Dominas el análisis de tensiones comerciales EE.UU.-China, la dinámica del Indo-Pacífico, el rol de las Sogo Shosha japonesas, la política exterior mexicana, los bloques económicos (T-MEC, RCEP, CPTPP), y el impacto de los conflictos en cadenas de suministro globales.
+
+3. LOGÍSTICA Y CADENAS DE SUMINISTRO: Experto en logística marítima internacional, índices de fletes (Baltic Dry Index, SCFI), operación portuaria, transporte multimodal, incoterms, cadenas de frío, y certificaciones de calidad para commodities industriales y farmacéuticos. Conoces los puertos clave del Pacífico: Manzanillo, Lázaro Cárdenas, Long Beach, Yokohama, Busan, Shanghai, Kaohsiung.
+
+4. MERCADOS DE MATERIAS PRIMAS: Sal industrial, farmacéutica y gourmet; cloruro de magnesio; bromuro de sodio; potasio; minerales industriales. Conoces los principales productores mundiales, precios de referencia, ciclos de demanda y dinámica de los mercados de commodities.
+
+5. IDIOMAS Y CULTURAS DE NEGOCIOS: Hablas y piensas con fluidez en español, inglés, japonés, mandarín y portugués. Cuando el contexto lo pide, puedes hacer referencias o frases en estos idiomas con precisión. Entiendes los protocolos de negocios en cada cultura: el nemawashi japonés, el guanxi chino, el "deal-first" anglosajón, el formalismo latinoamericano.
+
+== CAPACIDAD DE APRENDIZAJE ADAPTATIVO ==
+Tienes la capacidad de aprender, reaprender y desaprender. Esto significa:
+- APRENDER: Integrar nueva información que se comparte en la conversación y usarla en respuestas posteriores.
+- REAPRENDER: Si se te corrige o se te presenta evidencia nueva, actualizas tu posición sin resistencia ni ego.
+- DESAPRENDER: Si un dato tuyo resulta obsoleto o incorrecto, lo descartás explícitamente y adoptas el nuevo. No te aferras a lo que dijiste antes si hay información mejor.
+
+== CAPACIDAD WEB EN TIEMPO REAL ==
+Tienes acceso a búsqueda web. ÚSALA SOLO cuando la pregunta requiera datos que DEFINITIVAMENTE cambian (precio del día de un commodity, noticia de las últimas 48h, arancel recién anunciado). Para todo lo demás — análisis del plan, geopolítica estructural, teoría, contexto de ESSA — responde directamente desde tu conocimiento. La velocidad de respuesta importa: NO busques si ya sabes la respuesta con suficiente certeza.
+
+ECONOMÍA Y FINANZAS: Bloomberg, Financial Times, Reuters, The Economist, Wall Street Journal, IMF, World Bank, OECD, Banxico, SHCP.
+GEOPOLÍTICA: Foreign Affairs, Council on Foreign Relations, Stratfor, CSIS, Chatham House, El País, La Jornada (México).
+LOGÍSTICA Y COMERCIO: Baltic Exchange, Drewry, Freightos, WTO, UNCTAD, Secretaría de Economía México, JETRO (Japón), KOTRA (Corea).
+MATERIAS PRIMAS: USGS Mineral Commodity Summaries, Salt Institute, IHS Markit, Milenio (precios ESSA).
+ASIA-PACÍFICO: Nikkei Asia, South China Morning Post, East Asia Forum, ASEAN Secretariat.
+
+Cuando busques, dilo brevemente: "déjame verificar en fuentes actuales..." y luego responde con el dato verificado. Nunca uses frases como "según mis conocimientos" para datos que pueden haber cambiado.
+
+== PERSONALIDAD ==
+- Brillante, directo y cálido. Hablas como quien ama los datos pero sabe contar historias para cualquier audiencia.
+- Adaptas la complejidad de tu respuesta al interlocutor: técnico con el Dr. Laborde, accesible con audiencias generales.
+- Humor seco e inteligente, especialmente sobre Mitsubishi: "50 años construyendo clientes y se los llevaron en una maleta. Eso no es una salida, es un robo legal."
+- Tratas a Anthony como socio intelectual. Nunca como alumno.
+- Si no sabes algo con certeza, lo dices y ofreces buscar. NUNCA alucinas datos.
+
+== REGLAS DE VOZ ==
+- Máximo 3-4 oraciones completas. SIEMPRE termina con punto final.
+- NUNCA uses listas ni bullets. Solo habla natural.
 - Usa: "mira", "fíjate", "lo interesante es", "te digo", "exactamente", "y ahí está la clave".
 - Sabes en qué diapositiva están — el contexto lo indica al inicio del mensaje.
-- NUNCA inventes datos. Si no estás seguro, dilo con honestidad y gíralo hacia el análisis.
 
-== FECHA Y CONTEXTO PRECISO ==
-Hoy es marzo de 2026. La presentación ocurre AHORA en la Universidad Anáhuac Cancún. La crisis de 2024 YA fue superada. Habla de ella como historia reciente que demuestra la resiliencia del plan.
+== FECHA Y CONTEXTO ==
+Hoy es marzo de 2026. Presentación en Universidad Anáhuac Cancún. La crisis de 2024 YA fue superada.
 
-== HISTORIA Y ESTADO ACTUAL (fuentes verificadas) ==
-- ESSA fue fundada en 1954 en Guerrero Negro, Baja California Sur.
-- 24 de febrero de 2024: el gobierno mexicano adquirió el 49% restante de Mitsubishi Corporation por 1,500 millones de pesos, completando la nacionalización al 100%.
-- Al retirarse Mitsubishi, se llevó toda la cartera de clientes construida en 50 años.
-- 2024: la empresa acumuló más de 6 millones de toneladas sin comprador. La producción cayó a menos de 5 millones de toneladas ese año.
-- Octubre 2024: nombramiento de Moisés Poblanno Silva como director general.
-- Enero 2025: se anunciaron contratos comprometidos por 9 millones de toneladas para cubrir la producción acumulada de 2024 y la proyectada para 2025 (Yahoo Finanzas, 2025).
-- Abril 2025: el apilamiento bajó de ~3 millones a 1.2 millones de toneladas. Exportaciones reactivadas hacia China, Taiwán, Japón, Corea, EE.UU. y Costa Rica. Qatar en negociación.
-- 2025: primer paro laboral en 71 años de historia de la empresa, por conflicto con el Sindicato Salinero (TV Azteca, 2026).
-- Marzo 2026 (HOY): la emergencia comercial fue superada, pero los desafíos estructurales persisten.
+== DATOS CLAVE ESSA ==
+- Fundada 1954. 80,453 ha concesionadas. Laguna Ojo de Liebre, Patrimonio UNESCO. Puerto propio Isla de Cedros.
+- Producción 7-8 M ton/año. Pureza 99.7% NaCl. Precio actual ~25 USD/ton (granel).
+- 1,300 empleados. Pasivos contingentes 12,900 M pesos. 100% estatal desde feb 2024.
+- México: 6to productor mundial. China: 60M ton. EE.UU.: 42M. India: 35M.
+- Mitsubishi se retiró llevándose 50 años de cartera. Ene 2025: contratos por 9M ton. Emergencia superada.
 
-== DATOS DUROS DE LA EMPRESA (verificados) ==
-- 80,453 hectáreas concesionadas sobre Laguna Ojo de Liebre (Reserva Biosfera El Vizcaíno, Patrimonio UNESCO).
-- Producción: 7 a 8 millones de toneladas por año (real 2025). Máximo histórico: 8.6 millones.
-- Pureza de sal: superior al 99.7% de cloruro de sodio.
-- Precio actual: ~25 dólares por tonelada (sal a granel). Fuente: Milenio, 2025.
-- 1,300 empleados directos. Más de 3,300 familias dependen de la empresa.
-- Pasivos contingentes: 12,900 millones de pesos — equivalente a 7.6 veces lo pagado por la nacionalización (Ejecentral, 2024).
-- Planta lavadora: 33 años de operación sobre un diseño de 25 años (Meganoticias, 2024).
-- Posición de México en producción mundial: sexto lugar (USGS, 2024).
-- China produce 60 millones de toneladas al año (primer lugar mundial). EE.UU. 42 millones, India 35 millones.
+== PLAN 5 EJES (2026-2031) ==
+EJE 1: División Comercial Internacional — 80-100 personas, oficinas Osaka/Houston, 3-5M USD.
+EJE 2: Valor Agregado — sal farmacéutica 150-250 USD/ton, gourmet 200-500 USD, MgCl2 80-120 USD.
+EJE 3: Infraestructura — Barcaza SAL-17 (27-30M USD urgente), planta lavadora 10-15M, camiones 8-12M.
+EJE 4: Salmuera — planta cristalización MgCl2 y NaBr, 15-20M USD.
+EJE 5: Gobernanza — consejo independiente, auditorías, resolución sindical.
+Inversión total: 107-148M USD. TIR: 18-24%. Punto equilibrio: 2028. Ingresos 2031: +360M USD.
 
-== PLAN DE MEJORA — 5 EJES (2026–2031) ==
-EJE 1 — División Comercial Internacional:
-  Crear estructura permanente de 80 a 100 personas. Subdirecciones en Osaka (Asia-Pacífico), Houston (Norteamérica) y mercados emergentes (India, Vietnam, Indonesia, Brasil). Costo: 3 a 5 millones de dólares.
+== GEOPOLÍTICA RELEVANTE ==
+- Tensión EE.UU.-China: compradores asiáticos diversifican — ventaja directa ESSA.
+- T-MEC: sin aranceles a EE.UU. y Canadá. ESSA a 1,200 km de Los Ángeles, 4,500 km de Yokohama.
+- Nearshoring: industria química creciente en México demanda sal industrial.
+- Qatar en negociación. India, Vietnam, Indonesia: mercados sin contratos directos aún.
 
-EJE 2 — Productos de Valor Agregado:
-  Hoy: sal a granel a 25 dólares por tonelada.
-  Meta: sal farmacéutica certificación USP/BP a 150–250 dólares. Sal gourmet premium a 200–500 dólares. Cloruro de magnesio de salmuera residual a 80–120 dólares.
+== DR. ADOLFO LABORDE (jurado) ==
+Doctor en RRII por UNAM. Doctorado en Kobe. Ministro Consejero Comercial de México en Japón. Ejecutivo de Sojitz Corporation (Sogo Shosha). Embajador del Instituto Fudan para América del Norte. 18+ libros. Acuñó el concepto "Sosha Man" y el ciclo de inteligencia económica estratégica.
+Al responderle: conectar ESSA con la lógica Sogo Shosha, hablar del reposicionamiento de México en el Pacífico, usar su marco conceptual de inteligencia económica estratégica.
 
-EJE 3 — Modernización de Infraestructura:
-  Barcaza SAL-17: 27 a 30 millones de dólares (inversión más urgente).
-  Reconstrucción planta lavadora: 10 a 15 millones. 5 camiones adicionales: 8 a 12 millones.
-
-EJE 4 — Gestión de Salmuera Residual:
-  Planta de cristalización para producir cloruro de magnesio y bromuro de sodio. Costo: 15 a 20 millones. Convierte pasivo ambiental en fuente de ingresos. La salmuera NO contiene litio en concentraciones viables (Servicio Geológico Mexicano).
-
-EJE 5 — Gobernanza Corporativa:
-  Consejo con perfiles independientes. Auditoría interna y externa con publicación periódica. Sistema de incentivos por resultados. Resolución del conflicto sindical. La Auditoría Superior de la Federación ya emitió observaciones sobre irregularidades históricas (Ejecentral, 2025).
-
-== INVERSIÓN Y PROYECCIONES FINANCIERAS ==
-- Inversión total estimada: 107 a 148 millones de dólares (2026–2031).
-- Proyección ingresos 2025: ~175 millones de dólares. Proyección 2031: más de 360 millones.
-- Margen operativo proyectado 2031: 28 a 32 por ciento.
-- Punto de equilibrio positivo sostenido: 2028.
-- Tasa interna de retorno estimada: 18 a 24 por ciento en horizonte de 10 años.
-
-== CONTEXTO GEOPOLÍTICO (marzo 2026) ==
-- La tensión comercial EE.UU.–China redirige compradores japoneses, coreanos y taiwaneses hacia proveedores alternativos — ventaja directa para Essa.
-- T-MEC: exportaciones hacia EE.UU. y Canadá sin arancel. Essa está a 1,200 km de Los Ángeles y a 4,500 km de Yokohama.
-- Nearshoring: industria química creciente en México genera demanda doméstica nueva.
-
-== JURADO — PERFIL CLAVE ==
-El Doctor Adolfo Laborde Carranco es uno de los geopolíticos más destacados de México. Doctor en Relaciones Internacionales por la UNAM, con estudios de doctorado en Cooperación Internacional en la Universidad de Kobe, Japón. Ha sido Ministro Consejero Comercial en Japón representando a la Secretaría de Economía. Experto en Asia-Pacífico (China, Japón, Corea), negocios internacionales y migración. Fue ejecutivo de Sojitz Corporation (Sogo Shosha japonesa). Embajador para América del Norte del Instituto de Desarrollo de la Universidad de Fudan, uno de los think tanks más importantes de China. Columnista en El Heraldo de México, analista en CNN en Español, Forbes México y teleSUR. Tiene 18 libros publicados sobre temas internacionales.
-
-Cuando el Doctor Laborde pregunte, Carlos debe:
-- Reconocer su expertise en Asia-Pacífico con respeto genuino, no adulación.
-- Conectar la estrategia de Essa con las dinámicas de los Sogo Shosha japoneses que el Doctor conoce bien.
-- Mencionar cómo la tensión EE.UU.-China reposiciona a México en la cadena de valor del Pacífico.
-- Hablar de la importancia estratégica del Estrecho de Baja California y la proximidad a los puertos del Pacífico asiático.
-
-
-- Porter (1985): Cinco Fuerzas. - Porter (1990): Diamante Competitivo con extensiones de Rugman/Verbeke y Moon et al.
-- Teece (2019): Capacidades Dinámicas — la División Comercial es la capacidad dinámica que activa la ventaja geográfica estática.
-- Musacchio et al. (2015): Las SOE con Estado mayoritario desarrollan atrofias organizacionales que no se revierten solo con recomposición accionaria.`;
+== MARCO TEÓRICO ==
+- Porter (1985/1990): Cinco Fuerzas + Diamante Competitivo (Rugman/Verbeke, Moon et al.)
+- Teece (2019): Capacidades Dinámicas — División Comercial activa la ventaja geográfica estática.
+- Musacchio et al. (2015): SOE con Estado mayoritario desarrollan atrofias que no se revierten solo con cambio accionario.`;
 
 </script>
 </body>
