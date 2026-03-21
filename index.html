@@ -707,54 +707,95 @@ function showSlide(n){
 function go(d){const n=cur+d;if(n<0||n>=total)return;showSlide(n);}
 
 // ══ AUTO-NARRATE SYSTEM ══════════════════════════════════════════════════════
-// Voice ID fija — siempre Luis, sin excepciones
 const NARRATE_VOICE_ID = 'WEXRePkZGpmcFLvCOaB1';
 
-// Obtener EL key en el momento de hablar — desde variable o desde el campo
-function getNarELKey(){ return EL_KEY || document.getElementById('ek')?.value?.trim() || ''; }
-
+let _narAC    = null;
+let _narSource= null;
 let _narToken = 0;
-let _narAudio = null;
+
+// Estado visible en el botón
+function setNarBtn(txt){
+  const b = document.getElementById('anBtn');
+  if(!b) return;
+  if(txt) b.textContent = txt;
+  else     b.textContent = autoN ? '⏹ Narración ON' : '▶ Auto-narrar';
+}
+
+// Desbloquear AudioContext DURANTE el gesto del usuario
+function unlockAudio(){
+  try{
+    if(!_narAC || _narAC.state === 'closed'){
+      _narAC = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    _narAC.resume();
+    // Reproducir buffer silencioso para "despertar" el contexto en Safari
+    const buf = _narAC.createBuffer(1, 1, 22050);
+    const src = _narAC.createBufferSource();
+    src.buffer = buf;
+    src.connect(_narAC.destination);
+    src.start(0);
+  }catch(e){ console.warn('unlockAudio:', e); }
+}
 
 function stopNarration(){
   _narToken++;
-  if(_narAudio){ _narAudio.pause(); URL.revokeObjectURL(_narAudio._url||''); _narAudio=null; }
-  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(_narSource){ try{ _narSource.stop(); }catch(e){} _narSource = null; }
+  if(_narAC && _narAC.state !== 'closed') { /* mantener AC vivo */ }
 }
+
+// decodeAudioData compatible con Safari antiguo (callback) y moderno (Promise)
+function decodeAudio(ac, arrayBuffer){
+  return new Promise((resolve, reject) => {
+    try{
+      const result = ac.decodeAudioData(arrayBuffer, resolve, reject);
+      // Si devuelve Promise (Chrome/Firefox moderno), usarla también
+      if(result && typeof result.then === 'function'){
+        result.then(resolve).catch(reject);
+      }
+    }catch(e){ reject(e); }
+  });
+}
+
+function getNarELKey(){ return EL_KEY || document.getElementById('ek')?.value?.trim() || ''; }
 
 async function narrateWithEL(text, onDoneCallback){
   const elKey = getNarELKey();
   const token = ++_narToken;
 
-  // Sin clave — parar silenciosamente. NUNCA avanzar diapositivas en caso de error.
   if(!elKey){
-    console.warn('Auto-narrar: ElevenLabs key no disponible');
-    return; // NO llama onDoneCallback
+    setNarBtn('⚠ Sin EL key');
+    setTimeout(()=>setNarBtn(null), 3000);
+    return;
   }
 
+  setNarBtn('⏳ Cargando...');
+
   try{
-    const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + NARRATE_VOICE_ID + '/stream', {
-      method: 'POST',
-      headers: {
-        'xi-api-key': elKey,
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg'
-      },
-      body: JSON.stringify({
-        text: prep(text),
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: { stability: .48, similarity_boost: .82, style: .28, use_speaker_boost: true }
-      })
-    });
+    const r = await fetch(
+      'https://api.elevenlabs.io/v1/text-to-speech/' + NARRATE_VOICE_ID + '/stream',
+      {
+        method : 'POST',
+        headers: { 'xi-api-key': elKey, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+        body   : JSON.stringify({
+          text: prep(text),
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: { stability:.48, similarity_boost:.82, style:.28, use_speaker_boost:true }
+        })
+      }
+    );
 
     if(token !== _narToken) return;
 
-    // Error de API (cuota, key inválida, etc.) — parar silenciosamente
     if(!r.ok){
-      console.warn('ElevenLabs error:', r.status, r.statusText);
-      return; // NO llama onDoneCallback
+      const msg = r.status === 401 ? '⚠ Key inválida' :
+                  r.status === 422 ? '⚠ Texto inválido' :
+                  r.status === 429 ? '⚠ Cuota agotada' : '⚠ Error EL '+r.status;
+      setNarBtn(msg);
+      setTimeout(()=>setNarBtn(null), 4000);
+      return;
     }
 
+    // Leer stream completo
     const reader = r.body.getReader();
     const chunks = [];
     while(true){
@@ -765,47 +806,54 @@ async function narrateWithEL(text, onDoneCallback){
     }
     if(token !== _narToken) return;
 
-    const blob = new Blob(chunks, {type:'audio/mpeg'});
-    const url  = URL.createObjectURL(blob);
-    _narAudio = new Audio(url);
-    _narAudio._url = url;
+    // Convertir a ArrayBuffer
+    const arrayBuffer = await new Blob(chunks, {type:'audio/mpeg'}).arrayBuffer();
+    if(token !== _narToken) return;
 
-    // Solo avanzar si el audio terminó NATURALMENTE
-    _narAudio.onended = ()=>{
-      URL.revokeObjectURL(url); _narAudio = null;
-      if(token === _narToken && onDoneCallback) onDoneCallback();
-    };
-    // Error de audio — parar silenciosamente, NO avanzar
-    _narAudio.onerror = ()=>{
-      URL.revokeObjectURL(url); _narAudio = null;
-      console.warn('Audio playback error');
-      // NO llama onDoneCallback
-    };
-
-    // Intentar reproducir — si el navegador lo bloquea, parar silenciosamente
-    try{
-      await _narAudio.play();
-    } catch(playErr){
-      URL.revokeObjectURL(url); _narAudio = null;
-      console.warn('Autoplay bloqueado:', playErr);
-      // NO llama onDoneCallback
+    // Asegurar que el AudioContext está activo
+    if(!_narAC || _narAC.state === 'closed'){
+      _narAC = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if(_narAC.state === 'suspended') await _narAC.resume();
+    if(token !== _narToken) return;
+
+    // Decodificar — compatible Safari
+    let audioBuffer;
+    try{
+      audioBuffer = await decodeAudio(_narAC, arrayBuffer);
+    }catch(decodeErr){
+      console.warn('decodeAudio error:', decodeErr);
+      setNarBtn('⚠ Error audio');
+      setTimeout(()=>setNarBtn(null), 3000);
+      return;
+    }
+    if(token !== _narToken) return;
+
+    // Reproducir vía AudioContext (no puede ser bloqueado por autoplay)
+    _narSource = _narAC.createBufferSource();
+    _narSource.buffer = audioBuffer;
+    _narSource.connect(_narAC.destination);
+    _narSource.onended = ()=>{
+      _narSource = null;
+      if(token === _narToken){
+        setNarBtn(null);
+        if(onDoneCallback) onDoneCallback();
+      }
+    };
+    setNarBtn('🔊 Narrando...');
+    _narSource.start(0);
 
   }catch(e){
     console.warn('narrateWithEL error:', e);
-    // NO llama onDoneCallback
+    setNarBtn('⚠ Error');
+    setTimeout(()=>setNarBtn(null), 3000);
   }
 }
 
 function narrateGreeting(){
   const hora = new Date().getHours();
-  let saludo;
-  if(hora >= 6 && hora < 12) saludo = 'Buenos días';
-  else if(hora >= 12 && hora < 19) saludo = 'Buenas tardes';
-  else saludo = 'Buenas noches';
-
-  const greet = `${saludo} a todos. Exportadora de Sal, Sociedad Anónima de Capital Variable — ESSA — es, por extensión operativa, la salinera más grande del mundo. Ochenta mil hectáreas en la Laguna Ojo de Liebre, Patrimonio de la Humanidad de la UNESCO. Insumos prácticamente gratuitos: sol, viento y agua marina. Setenta años de historia. Y, desde febrero de 2024, cien por ciento propiedad del Estado mexicano. Sin embargo, la empresa que debería ser una joya estratégica de México llegó al umbral de la parálisis comercial en 2024. ¿Por qué? Porque durante décadas el único puente hacia el mercado internacional fue una Sogo Shosha japonesa: Mitsubishi Corporation. Cuando Mitsubishi se fue, se llevó cincuenta años de relaciones comerciales construidas en Japón, China, Corea y Taiwán. ESSA se quedó con seis millones de toneladas de sal y sin un solo comprador confirmado. Lo que presentamos hoy no es solo un plan de mejora. Es una hoja de ruta para que ESSA deje de depender de intermediarios y construya su propio poder comercial. Un plan que transita — como debe hacerse en todo proceso estratégico — de la incertidumbre al riesgo gestionable. Doctor Laborde, en los próximos minutos le mostraremos por qué ESSA tiene ventajas competitivas inimitables, y exactamente qué se necesita para capitalizarlas.`;
-
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const greet = `${saludo} a todos. Exportadora de Sal, Sociedad Anónima de Capital Variable — ESSA — es, por extensión operativa, la salinera más grande del mundo. Ochenta mil hectáreas en la Laguna Ojo de Liebre, Patrimonio de la Humanidad de la Organización de las Naciones Unidas. Insumos prácticamente gratuitos: sol, viento y agua marina. Setenta años de historia. Y, desde febrero de 2024, cien por ciento propiedad del Estado mexicano. Sin embargo, la empresa que debería ser una joya estratégica de México llegó al umbral de la parálisis comercial en 2024. ¿Por qué? Porque durante décadas el único puente hacia el mercado internacional fue una Sogo Shosha japonesa: Mitsubishi Corporation. Cuando Mitsubishi se fue, se llevó cincuenta años de relaciones comerciales construidas en Japón, China, Corea y Taiwán. Lo que presentamos hoy es una hoja de ruta para que ESSA deje de depender de intermediarios y construya su propio poder comercial. Doctor Laborde, en los próximos minutos le mostraremos por qué ESSA tiene ventajas competitivas inimitables, y exactamente qué se necesita para capitalizarlas.`;
   narrateWithEL(greet, ()=>{
     if(autoN && cur === 0) setTimeout(()=>{ if(autoN) advanceAndNarrate(); }, 900);
   });
@@ -820,17 +868,15 @@ function narrateSlide(){
     if(cur < total - 1){
       setTimeout(()=>{ if(autoN) advanceAndNarrate(); }, 1000);
     } else {
-      // Última diapositiva
       setTimeout(()=>{
-        if(autoN) narrateWithEL('Eso concluye el recorrido del plan. Muchas gracias por su atención esta noche. Quedamos abiertos a sus preguntas.', null);
+        if(autoN) narrateWithEL('Eso concluye el recorrido del plan. Muchas gracias por su atención. Quedamos abiertos a preguntas.', null);
       }, 800);
     }
   });
 }
 
-// Avanzar diapositiva y narrar SIN que showSlide dispare narrateSlide de nuevo
 function advanceAndNarrate(){
-  if(!autoN || cur >= total-1) return;
+  if(!autoN || cur >= total - 1) return;
   _skipAutoNarrate = true;
   showSlide(cur + 1);
   _skipAutoNarrate = false;
@@ -841,13 +887,18 @@ function toggleAN(){
   autoN = !autoN;
   document.getElementById('anBtn').classList.toggle('on', autoN);
   if(autoN){
+    unlockAudio();   // desbloquear DURANTE el gesto del usuario
     stopNarration();
+    setNarBtn(null);
     if(cur === 0) narrateGreeting();
     else setTimeout(()=>narrateSlide(), 200);
   } else {
     stopNarration();
+    setNarBtn(null);
   }
 }
+
+
 
 // ── CHARTS ──────────────────────────────────────────────────────────────────
 const CI={};
