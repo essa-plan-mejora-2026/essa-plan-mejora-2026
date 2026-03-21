@@ -740,7 +740,7 @@ function unlockAudio(){
 function stopNarration(){
   _narToken++;
   if(_narSource){ try{ _narSource.stop(); }catch(e){} _narSource = null; }
-  if(_narAC && _narAC.state !== 'closed') { /* mantener AC vivo */ }
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
 // decodeAudioData compatible con Safari antiguo (callback) y moderno (Promise)
@@ -762,9 +762,10 @@ async function narrateWithEL(text, onDoneCallback){
   const elKey = getNarELKey();
   const token = ++_narToken;
 
+  // Sin key → usar voz del navegador directamente
   if(!elKey){
-    setNarBtn('⚠ Sin EL key');
-    setTimeout(()=>setNarBtn(null), 3000);
+    setNarBtn('🔊 Narrando...');
+    narrateWithBrowser(text, token, onDoneCallback);
     return;
   }
 
@@ -787,15 +788,12 @@ async function narrateWithEL(text, onDoneCallback){
     if(token !== _narToken) return;
 
     if(!r.ok){
-      const msg = r.status === 401 ? '⚠ Key inválida' :
-                  r.status === 422 ? '⚠ Texto inválido' :
-                  r.status === 429 ? '⚠ Cuota agotada' : '⚠ Error EL '+r.status;
-      setNarBtn(msg);
-      setTimeout(()=>setNarBtn(null), 4000);
+      // Fallback al navegador si ElevenLabs falla
+      setNarBtn('🔊 Narrando...');
+      narrateWithBrowser(text, token, onDoneCallback);
       return;
     }
 
-    // Leer stream completo
     const reader = r.body.getReader();
     const chunks = [];
     while(true){
@@ -806,30 +804,26 @@ async function narrateWithEL(text, onDoneCallback){
     }
     if(token !== _narToken) return;
 
-    // Convertir a ArrayBuffer
     const arrayBuffer = await new Blob(chunks, {type:'audio/mpeg'}).arrayBuffer();
     if(token !== _narToken) return;
 
-    // Asegurar que el AudioContext está activo
     if(!_narAC || _narAC.state === 'closed'){
       _narAC = new (window.AudioContext || window.webkitAudioContext)();
     }
     if(_narAC.state === 'suspended') await _narAC.resume();
     if(token !== _narToken) return;
 
-    // Decodificar — compatible Safari
     let audioBuffer;
     try{
       audioBuffer = await decodeAudio(_narAC, arrayBuffer);
     }catch(decodeErr){
-      console.warn('decodeAudio error:', decodeErr);
-      setNarBtn('⚠ Error audio');
-      setTimeout(()=>setNarBtn(null), 3000);
+      // Fallback si falla decodificación
+      setNarBtn('🔊 Narrando...');
+      narrateWithBrowser(text, token, onDoneCallback);
       return;
     }
     if(token !== _narToken) return;
 
-    // Reproducir vía AudioContext (no puede ser bloqueado por autoplay)
     _narSource = _narAC.createBufferSource();
     _narSource.buffer = audioBuffer;
     _narSource.connect(_narAC.destination);
@@ -844,11 +838,26 @@ async function narrateWithEL(text, onDoneCallback){
     _narSource.start(0);
 
   }catch(e){
-    console.warn('narrateWithEL error:', e);
-    setNarBtn('⚠ Error');
-    setTimeout(()=>setNarBtn(null), 3000);
+    if(token !== _narToken) return;
+    setNarBtn('🔊 Narrando...');
+    narrateWithBrowser(text, token, onDoneCallback);
   }
 }
+
+// Fallback: voz del navegador en español
+function narrateWithBrowser(text, token, onDoneCallback){
+  if(!window.speechSynthesis){ if(onDoneCallback && token===_narToken) onDoneCallback(); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(prep(text));
+  u.lang = 'es-MX'; u.rate = 0.88; u.pitch = 1.0; u.volume = 1;
+  const vs = window.speechSynthesis.getVoices();
+  const v = vs.find(x=>x.lang==='es-MX') || vs.find(x=>x.lang.startsWith('es-')) || vs.find(x=>x.lang.startsWith('es')) || vs[0];
+  if(v) u.voice = v;
+  u.onend  = ()=>{ if(token===_narToken){ setNarBtn(null); if(onDoneCallback) onDoneCallback(); } };
+  u.onerror = (e)=>{ if(e.error==='interrupted'||e.error==='canceled') return; if(token===_narToken){ setNarBtn(null); if(onDoneCallback) onDoneCallback(); } };
+  window.speechSynthesis.speak(u);
+}
+
 
 function narrateGreeting(){
   const hora = new Date().getHours();
